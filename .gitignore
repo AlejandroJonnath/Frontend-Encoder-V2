@@ -1,0 +1,39 @@
+# Dependencias
+node_modules/
+package-lock.json.log
+
+# Expo
+.expo/
+.expo-shared/
+web-build/
+dist/
+
+# Entornos y secretos
+.env
+.env.*
+.env.local
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Builds nativos (si se usa prebuild o eas build local)
+android/
+ios/
+*.orig.*
+
+# Claves y certificados
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Archivos del sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

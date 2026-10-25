@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "PDF Master & FirmaEC",
+    "slug": "frontend-operaciones-pdf",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-status-bar"
+    ]
+  }
+}
