@@ -4,10 +4,15 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  StyleSheet
+  StyleSheet,
+  Image
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { theme } from '../../theme/shadcn';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function HomeScreen({ onNavegar }) {
   const { usuario, perfil, cerrarSesion } = useAuth();
@@ -21,62 +26,50 @@ export default function HomeScreen({ onNavegar }) {
         {
           id: 'firmar',
           titulo: 'Firmar con .p12 (FirmaEC)',
-          descripcion: 'Firma PAdES válida con certificado digital y ubicación interactiva sobre el documento',
-          icono: '🖋️',
-          etiqueta: 'Estándar Ecuador',
-          colorAcento: '#38BDF8',
-          fondoBadge: 'rgba(56, 189, 248, 0.12)'
+          icono: 'shield',
+          etiqueta: 'PAdES Ecuador',
+          varianteBadge: 'accent',
+          fullWidth: true
         }
       ]
     },
     {
       titulo: 'Herramientas de Conversión a PDF',
-      subtitulo: 'Cada herramienta procesa exclusivamente su tipo de documento',
       items: [
         {
           id: 'convert_word',
           titulo: 'Word a PDF',
-          descripcion: 'Convierte exclusivamente documentos Word (.docx, .doc) preservando fuentes y tablas',
-          icono: '📘',
-          etiqueta: 'Docx / Doc',
-          colorAcento: '#2563EB',
-          fondoBadge: 'rgba(37, 99, 235, 0.12)'
+          icono: 'file-text',
+          etiqueta: 'DOCX / DOC',
+          varianteBadge: 'secondary',
         },
         {
           id: 'convert_excel',
           titulo: 'Excel a PDF',
-          descripcion: 'Hojas de cálculo (.xlsx, .xls) con previsualización interactiva y selección de hojas',
-          icono: '📊',
-          etiqueta: 'Xlsx / Xls',
-          colorAcento: '#10B981',
-          fondoBadge: 'rgba(16, 185, 129, 0.12)'
+          icono: 'grid',
+          etiqueta: 'XLSX / XLS',
+          varianteBadge: 'secondary',
         },
         {
           id: 'convert_ppt',
           titulo: 'PowerPoint a PDF',
-          descripcion: 'Convierte presentaciones (.pptx, .ppt) asignando una diapositiva por página PDF',
-          icono: '📙',
-          etiqueta: 'Pptx / Ppt',
-          colorAcento: '#EA580C',
-          fondoBadge: 'rgba(234, 88, 12, 0.12)'
+          icono: 'monitor',
+          etiqueta: 'PPTX / PPT',
+          varianteBadge: 'secondary',
         },
         {
           id: 'convert_txt',
           titulo: 'Bloc de notas a PDF',
-          descripcion: 'Archivos de texto plano (.txt) con tipografía uniforme y paginación automática',
-          icono: '📄',
-          etiqueta: '.TXT',
-          colorAcento: '#64748B',
-          fondoBadge: 'rgba(100, 116, 139, 0.12)'
+          icono: 'align-left',
+          etiqueta: 'TXT',
+          varianteBadge: 'secondary',
         },
         {
           id: 'convert_image',
-          titulo: 'PNG, JPG, JPEG a PDF',
-          descripcion: 'Convierte imágenes a PDF manteniendo alta resolución y proporciones originales',
-          icono: '🖼️',
-          etiqueta: 'Imágenes',
-          colorAcento: '#DB2777',
-          fondoBadge: 'rgba(219, 39, 119, 0.12)'
+          titulo: 'Imágenes a PDF',
+          icono: 'image',
+          etiqueta: 'PNG / JPG',
+          varianteBadge: 'secondary',
         }
       ]
     },
@@ -86,29 +79,23 @@ export default function HomeScreen({ onNavegar }) {
         {
           id: 'comprimir',
           titulo: 'Comprimir PDF',
-          descripcion: 'Reduce más del 50% del tamaño para archivos de hasta 2GB sin perder legibilidad',
-          icono: '🗜️',
+          icono: 'minimize-2',
           etiqueta: 'Hasta 2GB',
-          colorAcento: '#059669',
-          fondoBadge: 'rgba(5, 150, 105, 0.12)'
+          varianteBadge: 'success',
         },
         {
           id: 'unir',
-          titulo: 'Unir Múltiples PDFs',
-          descripcion: 'Combina varios documentos en el orden que elijas con compresión final integrada',
-          icono: '📑',
+          titulo: 'Unir PDFs',
+          icono: 'layers',
           etiqueta: 'Merge',
-          colorAcento: '#8B5CF6',
-          fondoBadge: 'rgba(139, 92, 246, 0.12)'
+          varianteBadge: 'secondary',
         },
         {
           id: 'notas',
           titulo: 'Notas en PDF',
-          descripcion: 'Coloca notas adhesivas interactivas arrastrándolas al lugar exacto',
-          icono: '📝',
-          etiqueta: 'Edición Visual',
-          colorAcento: '#F59E0B',
-          fondoBadge: 'rgba(245, 158, 11, 0.12)'
+          icono: 'edit-3',
+          etiqueta: 'Anotaciones',
+          varianteBadge: 'secondary',
         }
       ]
     },
@@ -118,11 +105,10 @@ export default function HomeScreen({ onNavegar }) {
         {
           id: 'ia',
           titulo: 'Groq AI (Resumen y Traductor)',
-          descripcion: 'Síntesis ejecutiva y traducción en Español, Inglés, Francés, Alemán y Chino',
-          icono: '🤖',
+          icono: 'cpu',
           etiqueta: 'Groq LPU',
-          colorAcento: '#6366F1',
-          fondoBadge: 'rgba(99, 102, 241, 0.12)'
+          varianteBadge: 'accent',
+          fullWidth: true
         }
       ]
     }
@@ -130,13 +116,24 @@ export default function HomeScreen({ onNavegar }) {
 
   return (
     <ScreenContainer
-      titulo={`¡Hola, ${nombreUsuario}!`}
-      subtitulo="Plataforma de Operaciones PDF & FirmaEC"
-      iconoTitulo="📄"
+      titulo="EncoderGoti"
+      subtitulo={`Hola, ${nombreUsuario}`}
+      iconoTitulo={
+        <Image
+          source={require('../../img/Logo.png')}
+          style={estilos.logoHeader}
+          resizeMode="contain"
+        />
+      }
       botonDerecho={
-        <TouchableOpacity style={estilos.btnCerrarSesion} onPress={cerrarSesion} activeOpacity={0.7}>
-          <Text style={estilos.textoCerrarSesion}>Cerrar Sesión</Text>
-        </TouchableOpacity>
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={cerrarSesion}
+          icon={<Feather name="log-out" size={13} color={theme.colors.mutedForeground} />}
+        >
+          Salir
+        </Button>
       }
     >
       <ScrollView
@@ -144,63 +141,88 @@ export default function HomeScreen({ onNavegar }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner de Bienvenida y Estado del Motor */}
-        <View style={estilos.bannerPro}>
+        {/* Banner de Estado del Motor */}
+        <View style={estilos.banner}>
           <View style={estilos.bannerHeader}>
-            <View style={estilos.badgePro}>
-              <Text style={estilos.textoBadgePro}>MOTOR ACTIVO</Text>
+            <View style={estilos.bannerMarca}>
+              <Text style={estilos.bannerTitulo}>EncoderGoti</Text>
             </View>
-            <Text style={estilos.tagCapacidad}>Hasta 2GB • Filtros Independientes</Text>
+            <Badge variant="accent">MOTOR ACTIVO</Badge>
           </View>
-          <Text style={estilos.bannerTitulo}>Operaciones Documentales Seguras</Text>
           <Text style={estilos.bannerDesc}>
-            Firma criptográfica PAdES validable por FirmaEC, streams de bajo consumo y herramientas de conversión separadas para evitar mezclas.
+            Suite integral de procesamiento seguro de documentos, firma electrónica FirmaEC PAdES y compresión de alto rendimiento.
           </Text>
         </View>
 
-        {/* Mapeo de Secciones */}
+        {/* Secciones de Herramientas */}
         {secciones.map((sec, secIdx) => (
           <View key={secIdx} style={estilos.seccionContenedor}>
             <View style={estilos.encabezadoSeccion}>
               <Text style={estilos.tituloSeccion}>{sec.titulo}</Text>
-              {sec.subtitulo && (
-                <Text style={estilos.subtituloSeccion}>{sec.subtitulo}</Text>
-              )}
             </View>
 
-            <View style={estilos.listaCards}>
-              {sec.items.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[estilos.card, { borderLeftColor: item.colorAcento }]}
-                  onPress={() => onNavegar(item.id)}
-                  activeOpacity={0.75}
-                >
-                  <View style={estilos.cardHeader}>
-                    <View style={[estilos.iconoCaja, { backgroundColor: item.fondoBadge }]}>
-                      <Text style={estilos.icono}>{item.icono}</Text>
-                    </View>
-                    <View style={estilos.infoCaja}>
-                      <View style={estilos.filaCategoria}>
-                        <Text style={[estilos.categoriaTexto, { color: item.colorAcento }]}>
-                          {item.etiqueta}
-                        </Text>
+            <View style={estilos.gridHerramientas}>
+              {sec.items.map((item) => {
+                if (item.fullWidth) {
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={estilos.tarjetaAncha}
+                      onPress={() => onNavegar(item.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={estilos.iconoCajaAncha}>
+                        <Feather name={item.icono} size={20} color={theme.colors.foreground} />
                       </View>
-                      <Text style={estilos.cardTitulo}>{item.titulo}</Text>
-                    </View>
-                    <View style={estilos.cajaFlecha}>
-                      <Text style={[estilos.flecha, { color: item.colorAcento }]}>›</Text>
-                    </View>
-                  </View>
+                      <View style={estilos.infoAncha}>
+                        <Text style={estilos.tituloAncho}>{item.titulo}</Text>
+                        <Badge variant={item.varianteBadge || 'secondary'}>
+                          {item.etiqueta}
+                        </Badge>
+                      </View>
+                      <Feather
+                        name="chevron-right"
+                        size={16}
+                        color={theme.colors.mutedForeground}
+                      />
+                    </TouchableOpacity>
+                  );
+                }
 
-                  <Text style={estilos.cardDesc}>{item.descripcion}</Text>
-                </TouchableOpacity>
-              ))}
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={estilos.tarjetaGrid}
+                    onPress={() => onNavegar(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={estilos.filaTopGrid}>
+                      <View style={estilos.iconoCajaGrid}>
+                        <Feather name={item.icono} size={18} color={theme.colors.foreground} />
+                      </View>
+                      <Badge variant={item.varianteBadge || 'secondary'}>
+                        {item.etiqueta}
+                      </Badge>
+                    </View>
+
+                    <View style={estilos.filaBottomGrid}>
+                      <Text style={estilos.tituloGrid} numberOfLines={2}>
+                        {item.titulo}
+                      </Text>
+                      <Feather
+                        name="chevron-right"
+                        size={14}
+                        color={theme.colors.mutedForeground}
+                        style={{ alignSelf: 'flex-end' }}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         ))}
 
-        {/* Espacio inferior de seguridad */}
         <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
@@ -208,146 +230,139 @@ export default function HomeScreen({ onNavegar }) {
 }
 
 const estilos = StyleSheet.create({
+  logoHeader: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+  },
   scroll: {
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
-    paddingTop: 16,
+    padding: 16,
+    paddingTop: 14,
   },
-  btnCerrarSesion: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+  banner: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  textoCerrarSesion: {
-    color: '#F87171',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  bannerPro: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 22,
   },
   bannerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  badgePro: {
-    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  textoBadgePro: {
-    color: '#38BDF8',
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  tagCapacidad: {
-    color: '#94A3B8',
-    fontSize: 11,
-    fontWeight: '500',
+  bannerMarca: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bannerTitulo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 6,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   bannerDesc: {
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     lineHeight: 18,
   },
   seccionContenedor: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   encabezadoSeccion: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   tituloSeccion: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-    letterSpacing: -0.2,
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.foreground,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
-  subtituloSeccion: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
+  gridHerramientas: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
-  listaCards: {
-    gap: 12,
-  },
-  card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
-    padding: 16,
+  // Bloque formato Grid (2 columnas)
+  tarjetaGrid: {
+    width: '48.5%',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderLeftWidth: 4,
+    borderColor: theme.colors.border,
+    justifyContent: 'space-between',
+    minHeight: 105,
   },
-  cardHeader: {
+  filaTopGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  iconoCajaGrid: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filaBottomGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  tituloGrid: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.foreground,
+    letterSpacing: -0.2,
+    flex: 1,
+    marginRight: 4,
+  },
+  // Bloque formato Ancho Completo (para herramientas singulares)
+  tarjetaAncha: {
+    width: '100%',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  iconoCaja: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  iconoCajaAncha: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  icono: {
-    fontSize: 22,
-  },
-  infoCaja: {
+  infoAncha: {
     flex: 1,
-  },
-  filaCategoria: {
-    marginBottom: 2,
-  },
-  categoriaTexto: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  cardTitulo: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-  },
-  cajaFlecha: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
+    gap: 8,
+    flexWrap: 'wrap',
   },
-  flecha: {
-    fontSize: 22,
-    lineHeight: 24,
-    fontWeight: 'bold',
-  },
-  cardDesc: {
-    color: '#94A3B8',
-    fontSize: 12,
-    lineHeight: 17,
+  tituloAncho: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.foreground,
+    letterSpacing: -0.2,
   },
 });

@@ -85,7 +85,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#090D16" />
+        <StatusBar barStyle="light-content" backgroundColor="#09090B" />
         <NavegadorPrincipal />
       </AuthProvider>
     </SafeAreaProvider>
@@ -95,7 +95,7 @@ export default function App() {
 const estilos = StyleSheet.create({
   cargandoContenedor: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#09090B',
     justifyContent: 'center',
     alignItems: 'center',
   },

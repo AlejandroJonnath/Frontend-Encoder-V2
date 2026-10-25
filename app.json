@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "PDF Master & FirmaEC",
-    "slug": "frontend-operaciones-pdf",
+    "name": "EncoderGoti",
+    "slug": "encodergoti",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
+      "backgroundColor": "#09090B"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0F172A"
+        "backgroundColor": "#09090B"
       }
     },
     "plugins": [

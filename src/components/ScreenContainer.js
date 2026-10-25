@@ -7,10 +7,12 @@ import {
   StatusBar
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { theme } from '../theme/shadcn';
 
 /**
- * Contenedor maestro que garantiza que ninguna vista quede tapada
- * por la barra de estado / notificaciones arriba, ni por los botones táctiles abajo.
+ * Contenedor maestro con estética inspirada en shadcn/ui.
+ * Garantiza safe area y encabezado limpio y minimalista.
  */
 export default function ScreenContainer({
   children,
@@ -27,11 +29,11 @@ export default function ScreenContainer({
     <View style={[
       estilos.contenedor,
       {
-        paddingTop: Math.max(insets.top, 12),
-        paddingBottom: Math.max(insets.bottom, 12)
+        paddingTop: Math.max(insets.top, 8),
+        paddingBottom: Math.max(insets.bottom, 10)
       }
     ]}>
-      <StatusBar barStyle="light-content" backgroundColor="#090D16" translucent />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} translucent />
 
       {/* Barra de Navegación Superior */}
       {(titulo || onVolver) && (
@@ -44,7 +46,7 @@ export default function ScreenContainer({
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 activeOpacity={0.7}
               >
-                <Text style={estilos.flechaVolver}>‹</Text>
+                <Feather name="chevron-left" size={18} color={theme.colors.foreground} />
                 <Text style={estilos.textoVolver}>Atrás</Text>
               </TouchableOpacity>
             )}
@@ -52,7 +54,13 @@ export default function ScreenContainer({
             {titulo && (
               <View style={estilos.titulosHeader}>
                 <View style={estilos.filaTitulo}>
-                  {iconoTitulo && <Text style={estilos.iconoHeader}>{iconoTitulo}</Text>}
+                  {iconoTitulo && (
+                    typeof iconoTitulo === 'string' ? (
+                      <Text style={estilos.iconoHeader}>{iconoTitulo}</Text>
+                    ) : (
+                      <View style={estilos.iconoHeaderWrapper}>{iconoTitulo}</View>
+                    )
+                  )}
                   <Text style={estilos.tituloPrincipal} numberOfLines={1}>{titulo}</Text>
                 </View>
                 {subtitulo && <Text style={estilos.subtituloHeader} numberOfLines={1}>{subtitulo}</Text>}
@@ -79,17 +87,17 @@ export default function ScreenContainer({
 const estilos = StyleSheet.create({
   contenedor: {
     flex: 1,
-    backgroundColor: '#090D16',
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
-    backgroundColor: '#0B1120',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
   headerIzquierda: {
     flex: 1,
@@ -99,25 +107,19 @@ const estilos = StyleSheet.create({
   btnVolver: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: theme.colors.secondary,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 12,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: theme.radius.md,
     marginRight: 12,
   },
-  flechaVolver: {
-    color: '#38BDF8',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginRight: 4,
-    marginTop: -2,
-  },
   textoVolver: {
-    color: '#E0F2FE',
+    color: theme.colors.foreground,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
+    marginLeft: 2,
   },
   titulosHeader: {
     flex: 1,
@@ -127,18 +129,21 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   iconoHeader: {
-    fontSize: 18,
-    marginRight: 6,
+    fontSize: 17,
+    marginRight: 8,
+  },
+  iconoHeaderWrapper: {
+    marginRight: 8,
   },
   tituloPrincipal: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.foreground,
     letterSpacing: -0.3,
   },
   subtituloHeader: {
-    fontSize: 11,
-    color: '#94A3B8',
+    fontSize: 12,
+    color: theme.colors.mutedForeground,
     marginTop: 1,
   },
   headerDerecha: {

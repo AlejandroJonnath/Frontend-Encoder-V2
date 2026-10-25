@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
+import { Feather } from '@expo/vector-icons';
 import { leerUriComoBase64 } from '../utils/apiUploader';
+import { theme } from '../theme/shadcn';
 
 /**
  * Visor real del documento PDF (estilo FirmaEC)
@@ -414,7 +416,7 @@ export default function PdfRealDocumentViewer({
 
   return (
     <View style={[estilos.contenedor, pantallaCompleta && { flex: 1, width: '100%', marginBottom: 0 }]}>
-      {/* Barra superior de cambio de páginas y coordenadas */}
+      {/* Barra superior de cambio de páginas */}
       <View style={estilos.barraPaginas}>
         <View style={estilos.badgePagina}>
           <Text style={estilos.textoPaginas}>
@@ -424,31 +426,35 @@ export default function PdfRealDocumentViewer({
 
         <View style={estilos.filaBotones}>
           <TouchableOpacity
-            style={[estilos.btnPaginacion, paginaActual <= 1 && { opacity: 0.3 }]}
+            style={[estilos.btnPaginacion, paginaActual <= 1 && estilos.btnDeshabilitado]}
             disabled={paginaActual <= 1}
             onPress={() => cambiarPagina(-1)}
+            activeOpacity={0.7}
           >
-            <Text style={estilos.textoBtn}>◀ Anterior</Text>
+            <Feather name="chevron-left" size={14} color={theme.colors.foreground} />
+            <Text style={estilos.textoBtn}>Anterior</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[estilos.btnPaginacion, paginaActual >= totalPaginas && { opacity: 0.3 }]}
+            style={[estilos.btnPaginacion, paginaActual >= totalPaginas && estilos.btnDeshabilitado]}
             disabled={paginaActual >= totalPaginas}
             onPress={() => cambiarPagina(1)}
+            activeOpacity={0.7}
           >
-            <Text style={estilos.textoBtn}>Siguiente ▶</Text>
+            <Text style={estilos.textoBtn}>Siguiente</Text>
+            <Feather name="chevron-right" size={14} color={theme.colors.foreground} />
           </TouchableOpacity>
         </View>
       </View>
 
       <Text style={estilos.instruccion}>
-        🖐️ Arrastra la estampa o toca cualquier parte del documento para ubicar la firma:
+        Arrastra la estampa o pulsa sobre la página para fijar la posición exacta:
       </Text>
 
       {/* Visor interactivo WebView */}
       <View style={[estilos.cajaWebView, pantallaCompleta && { flex: 1, height: '100%' }]} {...panResponder.panHandlers}>
         {cargandoPdf ? (
           <View style={estilos.cargando}>
-            <ActivityIndicator size="large" color="#38BDF8" />
+            <ActivityIndicator size="large" color={theme.colors.foreground} />
             <Text style={estilos.textoCargando}>Cargando documento...</Text>
           </View>
         ) : (
@@ -467,9 +473,9 @@ export default function PdfRealDocumentViewer({
         )}
       </View>
 
-      {/* Fila de Coordenadas Milimétricas */}
+      {/* Fila de Coordenadas */}
       <View style={estilos.filaCoords}>
-        <Text style={estilos.textoCoord}>📍 Pág: {coordenadasActuales.pagina}</Text>
+        <Text style={estilos.textoCoord}>Pág: {coordenadasActuales.pagina}</Text>
         <Text style={estilos.textoCoord}>X: {coordenadasActuales.x} pt</Text>
         <Text style={estilos.textoCoord}>Y: {coordenadasActuales.y} pt</Text>
       </View>
@@ -492,37 +498,43 @@ const estilos = StyleSheet.create({
     paddingHorizontal: 2,
   },
   badgePagina: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.secondary,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: theme.colors.border,
   },
   textoPaginas: {
-    color: '#38BDF8',
+    color: theme.colors.foreground,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   filaBotones: {
     flexDirection: 'row',
     gap: 8,
   },
   btnPaginacion: {
-    backgroundColor: '#1E293B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.secondary,
     borderWidth: 1,
-    borderColor: '#334155',
-    paddingHorizontal: 12,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: theme.radius.sm,
+    gap: 4,
+  },
+  btnDeshabilitado: {
+    opacity: 0.35,
   },
   textoBtn: {
-    color: '#E0F2FE',
+    color: theme.colors.foreground,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   instruccion: {
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginBottom: 10,
     textAlign: 'center',
@@ -530,15 +542,15 @@ const estilos = StyleSheet.create({
   cajaWebView: {
     width: '100%',
     height: 460,
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   webview: {
     flex: 1,
-    backgroundColor: '#0B1120',
+    backgroundColor: '#000000',
   },
   cargando: {
     flex: 1,
@@ -546,7 +558,7 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   textoCargando: {
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 8,
   },
@@ -555,16 +567,16 @@ const estilos = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
     marginTop: 8,
-    backgroundColor: '#0F172A',
+    backgroundColor: theme.colors.card,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: theme.colors.border,
   },
   textoCoord: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });

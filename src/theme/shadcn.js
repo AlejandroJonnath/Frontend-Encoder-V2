@@ -1,0 +1,77 @@
+/**
+ * Tokens de diseño inspirados en shadcn/ui (Dark Zinc Theme)
+ */
+export const theme = {
+  colors: {
+    background: '#09090B',
+    foreground: '#FAFAFA',
+    card: '#121215',
+    cardForeground: '#FAFAFA',
+    cardHover: '#18181B',
+    popover: '#121215',
+    popoverForeground: '#FAFAFA',
+    primary: '#FAFAFA',
+    primaryForeground: '#09090B',
+    secondary: '#1C1C21',
+    secondaryForeground: '#F4F4F5',
+    muted: '#1E1E24',
+    mutedForeground: '#A1A1AA',
+    accent: '#0284C7',
+    accentForeground: '#F0F9FF',
+    accentMuted: 'rgba(2, 132, 199, 0.12)',
+    destructive: '#EF4444',
+    destructiveForeground: '#FFFFFF',
+    destructiveMuted: 'rgba(239, 68, 68, 0.12)',
+    border: 'rgba(255, 255, 255, 0.08)',
+    borderStrong: 'rgba(255, 255, 255, 0.16)',
+    input: 'rgba(255, 255, 255, 0.08)',
+    inputBackground: '#0D0D11',
+    ring: '#38BDF8',
+    success: '#10B981',
+    successMuted: 'rgba(16, 185, 129, 0.12)',
+  },
+  radius: {
+    sm: 6,
+    md: 10,
+    lg: 14,
+    xl: 18,
+    full: 9999,
+  },
+  typography: {
+    h1: {
+      fontSize: 24,
+      fontWeight: '700',
+      letterSpacing: -0.5,
+      color: '#FAFAFA',
+    },
+    h2: {
+      fontSize: 18,
+      fontWeight: '600',
+      letterSpacing: -0.3,
+      color: '#FAFAFA',
+    },
+    h3: {
+      fontSize: 15,
+      fontWeight: '600',
+      letterSpacing: -0.2,
+      color: '#FAFAFA',
+    },
+    body: {
+      fontSize: 14,
+      color: '#A1A1AA',
+      lineHeight: 20,
+    },
+    small: {
+      fontSize: 12,
+      color: '#A1A1AA',
+      lineHeight: 16,
+    },
+    label: {
+      fontSize: 11,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: '#71717A',
+    },
+  },
+};

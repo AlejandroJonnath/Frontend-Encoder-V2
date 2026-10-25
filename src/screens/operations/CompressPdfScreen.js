@@ -4,13 +4,17 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function CompressPdfScreen({ onVolver }) {
   const [archivoPdf, setArchivoPdf] = useState(null);
@@ -52,7 +56,6 @@ export default function CompressPdfScreen({ onVolver }) {
       const nombreBase = archivoPdf.name.replace(/\.pdf$/i, '');
       const nombreSalida = `${nombreBase}_compress.pdf`;
 
-      // Subida 100% nativa con FileSystem.uploadAsync y descarga directa
       const respuesta = await procesarOperacionNativa({
         endpoint: '/pdf/comprimir',
         archivoUri: archivoPdf.uri,
@@ -79,8 +82,8 @@ export default function CompressPdfScreen({ onVolver }) {
   return (
     <ScreenContainer
       titulo="Comprimir PDF"
-      subtitulo="Hasta 2GB • Reducción agresiva >50%"
-      iconoTitulo="🗜️"
+      subtitulo="Hasta 2GB • Optimización de Streams"
+      iconoTitulo={<Feather name="minimize-2" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -89,45 +92,59 @@ export default function CompressPdfScreen({ onVolver }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={estilos.bannerGuia}>
-          <Text style={estilos.tituloGuia}>🚀 Alta Reducción Sin Pérdida</Text>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="success">REDUCCIÓN ALTA</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Optimización Cero Pérdidas</Text>
           <Text style={estilos.textoGuia}>
-            El compresor optimiza fuentes, remuestrea imágenes a 150 DPI y limpia streams duplicados sin alterar el texto ni la nitidez de lectura.
+            Reduce el peso del archivo remuestreando imágenes a 150 DPI y purgando tablas de objetos duplicadas sin degradar la nitidez de lectura.
           </Text>
         </View>
 
-        <View style={estilos.card}>
-          <Text style={estilos.etiquetaCard}>DOCUMENTO A PROCESAR</Text>
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarPdf} activeOpacity={0.7}>
-            <Text style={estilos.iconoPicker}>{archivoPdf ? '📄' : '📁'}</Text>
-            <View style={estilos.infoPicker}>
-              <Text style={estilos.textoPickerPrincipal}>
-                {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF (hasta 2GB)'}
-              </Text>
-              <Text style={estilos.textoPickerSub}>
-                {archivoPdf ? `Tamaño actual: ${formatearBytes(archivoPdf.size)}` : 'Soporta archivos masivos sin límite'}
-              </Text>
-            </View>
-            {archivoPdf && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
+        <Card style={estilos.card}>
+          <CardHeader>
+            <CardTitle>Documento a Comprimir</CardTitle>
+            <CardDescription>Soporta archivos de hasta 2GB mediante streams</CardDescription>
+          </CardHeader>
 
-        <TouchableOpacity
-          style={[estilos.btnAccion, (comprimiendo || !archivoPdf) && { opacity: 0.6 }]}
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarPdf} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoPdf ? "file-text" : "upload-cloud"}
+                  size={20}
+                  color={archivoPdf ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoPdf ? `Tamaño actual: ${formatearBytes(archivoPdf.size)}` : 'Toca para examinar tus archivos'}
+                </Text>
+              </View>
+              {archivoPdf && <Badge variant="success">Listo</Badge>}
+            </TouchableOpacity>
+          </CardContent>
+        </Card>
+
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarCompresion}
           disabled={comprimiendo || !archivoPdf}
-          activeOpacity={0.8}
+          cargando={comprimiendo}
+          icon={!comprimiendo && <Feather name="zap" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnAccion}
         >
-          {comprimiendo ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={estilos.textoBtnAccion}>Comprimir y Compartir (_compress.pdf)</Text>
-          )}
-        </TouchableOpacity>
+          Comprimir y Compartir
+        </Button>
 
         {resultado && (
-          <View style={estilos.tarjetaResultado}>
-            <View style={estilos.badgeExito}>
-              <Text style={estilos.textoBadgeExito}>¡COMPRESIÓN EXITOSA!</Text>
+          <Card style={estilos.tarjetaResultado}>
+            <View style={estilos.badgeExitoFila}>
+              <Badge variant="success">COMPRESIÓN EXITOSA</Badge>
             </View>
 
             <View style={estilos.filaComparativa}>
@@ -136,7 +153,7 @@ export default function CompressPdfScreen({ onVolver }) {
                 <Text style={estilos.valorAntes}>{formatearBytes(resultado.tamanioOriginal)}</Text>
               </View>
 
-              <Text style={estilos.flechaMetrica}>➔</Text>
+              <Feather name="arrow-right" size={18} color={theme.colors.mutedForeground} />
 
               <View style={estilos.cajaMetrica}>
                 <Text style={estilos.etiquetaMetrica}>COMPRIMIDO</Text>
@@ -144,15 +161,16 @@ export default function CompressPdfScreen({ onVolver }) {
               </View>
             </View>
 
-            <View style={estilos.badgeReduccion}>
-              <Text style={estilos.textoBadgeReduccion}>
-                🔥 Reducción lograda: {resultado.reduccion}% menos pesado
+            <View style={estilos.resumenReduccion}>
+              <Feather name="check" size={14} color={theme.colors.success} style={{ marginRight: 6 }} />
+              <Text style={estilos.textoReduccion}>
+                Reducción alcanzada: {resultado.reduccion}% del tamaño original
               </Text>
             </View>
-          </View>
+          </Card>
         )}
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
   );
@@ -163,111 +181,77 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
   bannerGuia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 16,
   },
+  bannerHeader: {
+    marginBottom: 8,
+  },
   tituloGuia: {
-    color: '#34D399',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
   textoGuia: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 16,
   },
-  etiquetaCard: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginBottom: 10,
-    letterSpacing: 0.5,
-  },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#090D16',
-    borderWidth: 1.5,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    borderStyle: 'dashed',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
   },
-  iconoPicker: {
-    fontSize: 24,
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  infoPicker: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  textoPickerPrincipal: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  textoPickerSub: {
-    color: '#64748B',
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 2,
   },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   btnAccion: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 18,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  textoBtnAccion: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    width: '100%',
+    marginBottom: 16,
   },
   tarjetaResultado: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
+    marginTop: 6,
     alignItems: 'center',
+    padding: 18,
   },
-  badgeExito: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
+  badgeExitoFila: {
     marginBottom: 14,
-  },
-  textoBadgeExito: {
-    color: '#34D399',
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
   },
   filaComparativa: {
     flexDirection: 'row',
@@ -275,45 +259,44 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     marginBottom: 16,
+    gap: 16,
   },
   cajaMetrica: {
     alignItems: 'center',
-    paddingHorizontal: 16,
   },
   etiquetaMetrica: {
     fontSize: 11,
-    color: '#64748B',
-    fontWeight: '700',
+    color: theme.colors.mutedForeground,
+    fontWeight: '600',
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
   valorAntes: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#EF4444',
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.mutedForeground,
+    textDecorationLine: 'line-through',
   },
   valorDespues: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#10B981',
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.success,
   },
-  flechaMetrica: {
-    fontSize: 20,
-    color: '#64748B',
-  },
-  badgeReduccion: {
-    backgroundColor: '#090D16',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginBottom: 10,
-    width: '100%',
+  resumenReduccion: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.md,
+    width: '100%',
+    justifyContent: 'center',
   },
-  textoBadgeReduccion: {
-    color: '#34D399',
+  textoReduccion: {
+    color: theme.colors.foreground,
     fontSize: 13,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
 });

@@ -4,14 +4,18 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
   Image
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function ConvertImageScreen({ onVolver }) {
   const [archivoImagen, setArchivoImagen] = useState(null);
@@ -68,8 +72,8 @@ export default function ConvertImageScreen({ onVolver }) {
   return (
     <ScreenContainer
       titulo="Imágenes a PDF"
-      subtitulo="Conversión exclusiva de fotos PNG, JPG y JPEG"
-      iconoTitulo="🖼️"
+      subtitulo="Conversión de fotos PNG, JPG y JPEG"
+      iconoTitulo={<Feather name="image" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -77,66 +81,68 @@ export default function ConvertImageScreen({ onVolver }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner Informativo */}
-        <View style={estilos.bannerInfo}>
-          <Text style={estilos.tituloBanner}>📷 Formatos admitidos: PNG, JPG, JPEG</Text>
-          <Text style={estilos.textoBanner}>
-            La imagen se adaptará respetando su relación de aspecto original para ajustarse a una página PDF nítida y centrada sin distorsión.
+        <View style={estilos.bannerGuia}>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="secondary">FILTRO EXCLUSIVO IMÁGENES</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Alta Resolución y Proporción Nativa</Text>
+          <Text style={estilos.textoGuia}>
+            La imagen se adaptará respetando su relación de aspecto original para ajustarse a una página PDF centrada sin distorsión.
           </Text>
         </View>
 
-        {/* Selector de Imagen */}
-        <View style={estilos.card}>
-          <Text style={estilos.tituloCard}>Selecciona tu Imagen</Text>
-          <Text style={estilos.subtituloCard}>Únicamente archivos PNG, JPG o JPEG</Text>
+        <Card style={estilos.card}>
+          <CardHeader>
+            <CardTitle>Archivo de Imagen</CardTitle>
+            <CardDescription>Formatos compatibles: PNG, JPG, JPEG</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarImagen} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoImagen ? "image" : "upload-cloud"}
+                  size={20}
+                  color={archivoImagen ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoImagen ? archivoImagen.name : 'Seleccionar Imagen'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoImagen
+                    ? `${(archivoImagen.size / (1024 * 1024)).toFixed(2)} MB • Listo para procesar`
+                    : 'Toca para examinar tu galería o archivos'}
+                </Text>
+              </View>
+              {archivoImagen && <Badge variant="success">Listo</Badge>}
+            </TouchableOpacity>
 
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarImagen} activeOpacity={0.7}>
-            <View style={estilos.iconoCirculo}>
-              <Text style={estilos.iconoDoc}>{archivoImagen ? '🖼️' : '📁'}</Text>
-            </View>
-            <View style={estilos.infoDoc}>
-              <Text style={estilos.nombreDoc} numberOfLines={1}>
-                {archivoImagen ? archivoImagen.name : 'Toca para elegir imagen'}
-              </Text>
-              <Text style={estilos.detalleDoc}>
-                {archivoImagen
-                  ? `${(archivoImagen.size / (1024 * 1024)).toFixed(2)} MB • Listo para procesar`
-                  : 'Filtro exclusivo: PNG, JPG, JPEG'}
-              </Text>
-            </View>
-            {archivoImagen && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
+            {archivoImagen && (
+              <View style={estilos.contenedorPreview}>
+                <Image
+                  source={{ uri: archivoImagen.uri }}
+                  style={estilos.imagenPreview}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Miniatura de previsualización de la imagen */}
-          {archivoImagen && (
-            <View style={estilos.contenedorPreview}>
-              <Image
-                source={{ uri: archivoImagen.uri }}
-                style={estilos.imagenPreview}
-                resizeMode="contain"
-              />
-            </View>
-          )}
-        </View>
-
-        {/* Botón de Conversión */}
-        <TouchableOpacity
-          style={[estilos.btnConvertir, (convirtiendo || !archivoImagen) && { opacity: 0.6 }]}
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarConversion}
           disabled={convirtiendo || !archivoImagen}
-          activeOpacity={0.8}
+          cargando={convirtiendo}
+          icon={!convirtiendo && <Feather name="arrow-right-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnConvertir}
         >
-          {convirtiendo ? (
-            <View style={estilos.filaCargando}>
-              <ActivityIndicator color="#FFFFFF" size="small" />
-              <Text style={estilos.textoCargando}>Convirtiendo imagen a PDF...</Text>
-            </View>
-          ) : (
-            <Text style={estilos.textoBtnConvertir}>Convertir Imagen a PDF</Text>
-          )}
-        </TouchableOpacity>
+          Convertir Imagen a PDF
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
   );
@@ -147,126 +153,82 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
-  bannerInfo: {
-    backgroundColor: 'rgba(236, 72, 153, 0.1)',
-    borderRadius: 14,
+  bannerGuia: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.3)',
-    marginBottom: 18,
+    borderColor: theme.colors.border,
+    marginBottom: 16,
   },
-  tituloBanner: {
-    color: '#F472B6',
-    fontSize: 13,
-    fontWeight: 'bold',
+  bannerHeader: {
+    marginBottom: 8,
+  },
+  tituloGuia: {
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
-  textoBanner: {
-    color: '#94A3B8',
-    fontSize: 12,
+  textoGuia: {
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  tituloCard: {
-    color: '#F8FAFC',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtituloCard: {
-    color: '#64748B',
-    fontSize: 12,
-    marginBottom: 14,
-  },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
-    borderWidth: 1.5,
-    borderColor: '#334155',
   },
-  iconoCirculo: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  iconoDoc: {
-    fontSize: 22,
-  },
-  infoDoc: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  nombreDoc: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '500',
   },
-  detalleDoc: {
-    color: '#94A3B8',
-    fontSize: 11,
-  },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
+    marginTop: 2,
   },
   contenedorPreview: {
     marginTop: 14,
-    borderRadius: 12,
+    borderRadius: theme.radius.md,
     overflow: 'hidden',
-    backgroundColor: '#090D16',
+    backgroundColor: theme.colors.inputBackground,
     alignItems: 'center',
     justifyContent: 'center',
     height: 180,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: theme.colors.border,
   },
   imagenPreview: {
     width: '100%',
     height: '100%',
   },
   btnConvertir: {
-    backgroundColor: '#DB2777',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#DB2777',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  textoBtnConvertir: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  filaCargando: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  textoCargando: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    width: '100%',
   },
 });

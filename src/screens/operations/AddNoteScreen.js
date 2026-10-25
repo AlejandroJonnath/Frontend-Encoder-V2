@@ -5,16 +5,20 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
   Modal,
   SafeAreaView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import PdfRealDocumentViewer from '../../components/PdfRealDocumentViewer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function AddNoteScreen({ onVolver }) {
   const [archivoPdf, setArchivoPdf] = useState(null);
@@ -76,7 +80,7 @@ export default function AddNoteScreen({ onVolver }) {
     <ScreenContainer
       titulo="Notas en PDF"
       subtitulo="Añade notas adhesivas sobre el documento real"
-      iconoTitulo="📝"
+      iconoTitulo={<Feather name="edit-3" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -85,105 +89,132 @@ export default function AddNoteScreen({ onVolver }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={estilos.bannerGuia}>
-          <Text style={estilos.tituloGuia}>📌 Previsualizador Real</Text>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="accent">VISOR INTERACTIVO</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Anotaciones Visuales</Text>
           <Text style={estilos.textoGuia}>
-            Escribe el texto de tu nota y arrastra el recuadro sobre la página para colocarla exactamente donde desees.
+            Escribe el texto de tu comentario y arrastra el recuadro sobre la hoja para ubicarlo con total precisión.
           </Text>
         </View>
 
         {/* Paso 1: Documento */}
-        <View style={estilos.cardPaso}>
-          <View style={estilos.headerPaso}>
-            <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>1</Text></View>
-            <Text style={estilos.tituloPaso}>Documento PDF</Text>
-          </View>
-
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarPdf} activeOpacity={0.7}>
-            <Text style={estilos.iconoPicker}>{archivoPdf ? '📄' : '📁'}</Text>
-            <View style={estilos.infoPicker}>
-              <Text style={estilos.textoPickerPrincipal}>
-                {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
-              </Text>
-              <Text style={estilos.textoPickerSub}>
-                {archivoPdf ? 'Archivo cargado con éxito' : 'Toca para examinar archivos'}
-              </Text>
+        <Card style={estilos.cardPaso}>
+          <CardHeader style={estilos.headerPaso}>
+            <View style={estilos.badgePaso}>
+              <Text style={estilos.textoNumeroPaso}>1</Text>
             </View>
-            {archivoPdf && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {/* Paso 2: Redacción */}
-        <View style={estilos.cardPaso}>
-          <View style={estilos.headerPaso}>
-            <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>2</Text></View>
-            <Text style={estilos.tituloPaso}>Contenido de la Nota</Text>
-          </View>
-
-          <TextInput
-            style={estilos.inputArea}
-            placeholder="Escribe aquí tu comentario, revisión o instrucción..."
-            placeholderTextColor="#64748B"
-            multiline
-            numberOfLines={3}
-            value={textoNota}
-            onChangeText={setTextoNota}
-          />
-        </View>
-
-        {/* Paso 3: Ubicación con Viñeta Enfocada */}
-        {archivoPdf && (
-          <View style={estilos.cardPaso}>
-            <View style={estilos.headerPaso}>
-              <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>3</Text></View>
-              <Text style={estilos.tituloPaso}>Ubicación de la Nota</Text>
+            <View style={{ flex: 1 }}>
+              <CardTitle style={estilos.tituloPaso}>Documento PDF</CardTitle>
+              <CardDescription>Archivo a intervenir</CardDescription>
             </View>
+          </CardHeader>
 
-            <View style={estilos.cajaResumenPosicion}>
-              <View style={estilos.iconoPosicion}><Text style={{ fontSize: 24 }}>📌</Text></View>
-              <View style={{ flex: 1 }}>
-                <Text style={estilos.textoPosicionTitulo}>Página {posicionNota.pagina}</Text>
-                <Text style={estilos.textoPosicionCoords}>
-                  Coordenadas: X={Math.round(posicionNota.x)} pt • Y={Math.round(posicionNota.y)} pt
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarPdf} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoPdf ? "file-text" : "upload-cloud"}
+                  size={20}
+                  color={archivoPdf ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoPdf ? 'Archivo cargado con éxito' : 'Toca para examinar tus archivos'}
                 </Text>
               </View>
-              <View style={estilos.badgeFijado}>
-                <Text style={estilos.textoBadgeFijado}>✓ Fijada</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={estilos.btnAbrirViñeta}
-              onPress={() => setModalVisorVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={estilos.textoBtnAbrirViñeta}>🔍 Abrir Viñeta de Ubicación (Pantalla Completa)</Text>
+              {archivoPdf && <Badge variant="success">Listo</Badge>}
             </TouchableOpacity>
+          </CardContent>
+        </Card>
 
-            <Text style={estilos.textoGuiaViñeta}>
-              Abre el documento en una viñeta enfocada para arrastrar o pulsar la nota sin que la pantalla del celular se mueva.
-            </Text>
-          </View>
+        {/* Paso 2: Redacción */}
+        <Card style={estilos.cardPaso}>
+          <CardHeader style={estilos.headerPaso}>
+            <View style={estilos.badgePaso}>
+              <Text style={estilos.textoNumeroPaso}>2</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <CardTitle style={estilos.tituloPaso}>Contenido de la Nota</CardTitle>
+              <CardDescription>Comentario, revisión o instrucción</CardDescription>
+            </View>
+          </CardHeader>
+
+          <CardContent>
+            <TextInput
+              style={estilos.inputArea}
+              placeholder="Escribe aquí tu comentario o instrucción..."
+              placeholderTextColor={theme.colors.mutedForeground}
+              multiline
+              numberOfLines={3}
+              value={textoNota}
+              onChangeText={setTextoNota}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Paso 3: Ubicación */}
+        {archivoPdf && (
+          <Card style={estilos.cardPaso}>
+            <CardHeader style={estilos.headerPaso}>
+              <View style={estilos.badgePaso}>
+                <Text style={estilos.textoNumeroPaso}>3</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <CardTitle style={estilos.tituloPaso}>Ubicación de la Nota</CardTitle>
+                <CardDescription>Posición en la hoja del PDF</CardDescription>
+              </View>
+            </CardHeader>
+
+            <CardContent>
+              <View style={estilos.cajaResumenPosicion}>
+                <Feather name="map-pin" size={18} color={theme.colors.foreground} style={{ marginRight: 10 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={estilos.textoPosicionTitulo}>Página {posicionNota.pagina}</Text>
+                  <Text style={estilos.textoPosicionCoords}>
+                    X: {Math.round(posicionNota.x)} pt • Y: {Math.round(posicionNota.y)} pt
+                  </Text>
+                </View>
+                <Badge variant="secondary">Fijada</Badge>
+              </View>
+
+              <Button
+                variant="outline"
+                onPress={() => setModalVisorVisible(true)}
+                icon={<Feather name="maximize-2" size={14} color={theme.colors.foreground} />}
+                style={estilos.btnAbrirViñeta}
+              >
+                Abrir Viñeta de Ubicación
+              </Button>
+
+              <Text style={estilos.textoGuiaViñeta}>
+                Permite arrastrar la nota sobre el visor en pantalla completa sin desplazamiento no deseado.
+              </Text>
+            </CardContent>
+          </Card>
         )}
 
-        <TouchableOpacity
-          style={[estilos.btnAccion, (procesando || !archivoPdf || !textoNota) && { opacity: 0.5 }]}
+        {/* Botón Acción */}
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarAgregarNota}
           disabled={procesando || !archivoPdf || !textoNota}
-          activeOpacity={0.8}
+          cargando={procesando}
+          icon={!procesando && <Feather name="check-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnAccion}
         >
-          {procesando ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={estilos.textoBtnAccion}>
-              Insertar Nota y Compartir (_addnote.pdf)
-            </Text>
-          )}
-        </TouchableOpacity>
+          Insertar Nota y Compartir
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Viñeta Enfocada a Pantalla Completa para Ubicar Nota */}
+      {/* Modal Visor Pantalla Completa */}
       <Modal
         visible={modalVisorVisible}
         animationType="slide"
@@ -193,9 +224,9 @@ export default function AddNoteScreen({ onVolver }) {
         <SafeAreaView style={estilos.modalContenedor}>
           <View style={estilos.modalHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={estilos.modalTitulo}>📌 Ubicar Nota en Documento</Text>
+              <Text style={estilos.modalTitulo}>Ubicar Nota en Documento</Text>
               <Text style={estilos.modalSubtitulo}>
-                Arrastra la nota amarilla o pulsa sobre la hoja donde deseas insertarla
+                Arrastra el recuadro hasta el área requerida
               </Text>
             </View>
             <TouchableOpacity
@@ -203,7 +234,7 @@ export default function AddNoteScreen({ onVolver }) {
               onPress={() => setModalVisorVisible(false)}
               activeOpacity={0.7}
             >
-              <Text style={estilos.textoBtnCerrarModal}>✕</Text>
+              <Feather name="x" size={18} color={theme.colors.foreground} />
             </TouchableOpacity>
           </View>
 
@@ -224,13 +255,14 @@ export default function AddNoteScreen({ onVolver }) {
                 Página {posicionNota.pagina} • X: {Math.round(posicionNota.x)} pt • Y: {Math.round(posicionNota.y)} pt
               </Text>
             </View>
-            <TouchableOpacity
-              style={estilos.btnConfirmarModal}
+            <Button
+              variant="default"
+              size="lg"
               onPress={() => setModalVisorVisible(false)}
-              activeOpacity={0.8}
+              icon={<Feather name="check" size={16} color={theme.colors.primaryForeground} />}
             >
-              <Text style={estilos.textoBtnConfirmarModal}>✓ Guardar y Fijar Ubicación</Text>
-            </TouchableOpacity>
+              Fijar Ubicación
+            </Button>
           </View>
         </SafeAreaView>
       </Modal>
@@ -243,241 +275,193 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
   bannerGuia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 16,
   },
+  bannerHeader: {
+    marginBottom: 8,
+  },
   tituloGuia: {
-    color: '#FBBF24',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
   textoGuia: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   cardPaso: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 16,
   },
   headerPaso: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  badgeNumero: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#D97706',
+  badgePaso: {
+    width: 26,
+    height: 26,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
-  textoNumero: {
-    color: '#FFFFFF',
+  textoNumeroPaso: {
+    color: theme.colors.foreground,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   tituloPaso: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#090D16',
-    borderWidth: 1.5,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
-    borderStyle: 'dashed',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
   },
-  iconoPicker: {
-    fontSize: 24,
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  infoPicker: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  textoPickerPrincipal: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  textoPickerSub: {
-    color: '#64748B',
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 2,
   },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   inputArea: {
-    backgroundColor: '#090D16',
+    backgroundColor: theme.colors.inputBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 14,
-    minHeight: 85,
+    minHeight: 80,
     textAlignVertical: 'top',
-  },
-  btnAccion: {
-    backgroundColor: '#D97706',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 6,
-    shadowColor: '#D97706',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  textoBtnAccion: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
   },
   cajaResumenPosicion: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.radius.md,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 12,
   },
-  iconoPosicion: {
-    marginRight: 10,
-  },
   textoPosicionTitulo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   textoPosicionCoords: {
-    color: '#94A3B8',
-    fontSize: 11,
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
     marginTop: 2,
   },
-  badgeFijado: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-  },
-  textoBadgeFijado: {
-    color: '#10B981',
-    fontSize: 10,
-    fontWeight: '700',
-  },
   btnAbrirViñeta: {
-    backgroundColor: '#B45309',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
+    width: '100%',
     marginBottom: 8,
   },
-  textoBtnAbrirViñeta: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
   textoGuiaViñeta: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',
   },
+  btnAccion: {
+    width: '100%',
+    marginTop: 8,
+  },
   modalContenedor: {
     flex: 1,
-    backgroundColor: '#0B1120',
+    backgroundColor: theme.colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-    backgroundColor: '#0F172A',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
   modalTitulo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   modalSubtitulo: {
-    color: '#94A3B8',
-    fontSize: 11,
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
     marginTop: 2,
   },
   btnCerrarModal: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
   },
-  textoBtnCerrarModal: {
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   modalCuerpo: {
     flex: 1,
-    padding: 10,
+    backgroundColor: '#000000',
   },
   modalFooter: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#0F172A',
+    paddingVertical: 14,
+    backgroundColor: theme.colors.card,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: theme.colors.border,
   },
   modalInfoCoords: {
-    marginBottom: 8,
+    marginBottom: 10,
     alignItems: 'center',
   },
   modalCoordsTexto: {
-    color: '#FBBF24',
+    color: theme.colors.ring,
     fontSize: 12,
     fontWeight: '600',
-  },
-  btnConfirmarModal: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  textoBtnConfirmarModal: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });

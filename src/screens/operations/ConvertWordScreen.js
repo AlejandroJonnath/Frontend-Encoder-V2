@@ -4,13 +4,17 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function ConvertWordScreen({ onVolver }) {
   const [archivoWord, setArchivoWord] = useState(null);
@@ -70,8 +74,8 @@ export default function ConvertWordScreen({ onVolver }) {
   return (
     <ScreenContainer
       titulo="Word a PDF"
-      subtitulo="Conversión exclusiva de archivos .docx y .doc"
-      iconoTitulo="📘"
+      subtitulo="Conversión de documentos .docx y .doc"
+      iconoTitulo={<Feather name="file-text" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -79,55 +83,58 @@ export default function ConvertWordScreen({ onVolver }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner Informativo */}
-        <View style={estilos.bannerInfo}>
-          <Text style={estilos.tituloBanner}>📄 Formatos admitidos: Word (.docx, .doc)</Text>
-          <Text style={estilos.textoBanner}>
-            El documento conservará sus fuentes, márgenes, tablas, imágenes y formateo original intactos al exportarse a PDF.
+        <View style={estilos.bannerGuia}>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="secondary">FILTRO EXCLUSIVO WORD</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Preservación Tipográfica y Estilos</Text>
+          <Text style={estilos.textoGuia}>
+            Conserva fuentes, márgenes, tablas e imágenes exactamente como fueron estructuradas en Microsoft Word.
           </Text>
         </View>
 
-        {/* Selector de Archivo */}
-        <View style={estilos.card}>
-          <Text style={estilos.tituloCard}>Selecciona tu Documento Word</Text>
-          <Text style={estilos.subtituloCard}>Únicamente archivos de Microsoft Word</Text>
+        <Card style={estilos.card}>
+          <CardHeader>
+            <CardTitle>Documento de Word</CardTitle>
+            <CardDescription>Formatos compatibles: .docx y .doc</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarWord} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoWord ? "file-text" : "upload-cloud"}
+                  size={20}
+                  color={archivoWord ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoWord ? archivoWord.name : 'Seleccionar Documento Word'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoWord
+                    ? `${(archivoWord.size / (1024 * 1024)).toFixed(2)} MB • Listo para procesar`
+                    : 'Toca para examinar tu almacenamiento'}
+                </Text>
+              </View>
+              {archivoWord && <Badge variant="success">Listo</Badge>}
+            </TouchableOpacity>
+          </CardContent>
+        </Card>
 
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarWord} activeOpacity={0.7}>
-            <View style={estilos.iconoCirculo}>
-              <Text style={estilos.iconoDoc}>{archivoWord ? '📄' : '📁'}</Text>
-            </View>
-            <View style={estilos.infoDoc}>
-              <Text style={estilos.nombreDoc} numberOfLines={1}>
-                {archivoWord ? archivoWord.name : 'Toca para elegir documento Word'}
-              </Text>
-              <Text style={estilos.detalleDoc}>
-                {archivoWord
-                  ? `${(archivoWord.size / (1024 * 1024)).toFixed(2)} MB • Listo para procesar`
-                  : 'Filtro exclusivo: .docx o .doc'}
-              </Text>
-            </View>
-            {archivoWord && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {/* Botón de Conversión */}
-        <TouchableOpacity
-          style={[estilos.btnConvertir, (convirtiendo || !archivoWord) && { opacity: 0.6 }]}
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarConversion}
           disabled={convirtiendo || !archivoWord}
-          activeOpacity={0.8}
+          cargando={convirtiendo}
+          icon={!convirtiendo && <Feather name="arrow-right-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnConvertir}
         >
-          {convirtiendo ? (
-            <View style={estilos.filaCargando}>
-              <ActivityIndicator color="#FFFFFF" size="small" />
-              <Text style={estilos.textoCargando}>Convirtiendo a PDF oficial...</Text>
-            </View>
-          ) : (
-            <Text style={estilos.textoBtnConvertir}>Convertir Word a PDF</Text>
-          )}
-        </TouchableOpacity>
+          Convertir Word a PDF
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
   );
@@ -138,111 +145,67 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
-  bannerInfo: {
-    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-    borderRadius: 14,
+  bannerGuia: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.3)',
-    marginBottom: 18,
+    borderColor: theme.colors.border,
+    marginBottom: 16,
   },
-  tituloBanner: {
-    color: '#60A5FA',
-    fontSize: 13,
-    fontWeight: 'bold',
+  bannerHeader: {
+    marginBottom: 8,
+  },
+  tituloGuia: {
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
-  textoBanner: {
-    color: '#94A3B8',
-    fontSize: 12,
+  textoGuia: {
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  tituloCard: {
-    color: '#F8FAFC',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtituloCard: {
-    color: '#64748B',
-    fontSize: 12,
-    marginBottom: 14,
-  },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
-    borderWidth: 1.5,
-    borderColor: '#334155',
   },
-  iconoCirculo: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)',
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  iconoDoc: {
-    fontSize: 22,
-  },
-  infoDoc: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  nombreDoc: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '500',
   },
-  detalleDoc: {
-    color: '#94A3B8',
-    fontSize: 11,
-  },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
+    marginTop: 2,
   },
   btnConvertir: {
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  textoBtnConvertir: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  filaCargando: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  textoCargando: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    width: '100%',
   },
 });

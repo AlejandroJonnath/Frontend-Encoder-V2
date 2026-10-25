@@ -11,9 +11,14 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
 import { CONFIGURACION } from '../../config/constantes';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function MergePdfScreen({ onVolver }) {
   const [archivosPdf, setArchivosPdf] = useState([]);
@@ -68,7 +73,6 @@ export default function MergePdfScreen({ onVolver }) {
       setUniendo(true);
       const sesionId = `merge_${Date.now()}`;
 
-      // 1. Subida nativa de cada archivo a la sesión temporal
       for (let i = 0; i < archivosPdf.length; i++) {
         setProgresoTexto(`Subiendo archivo ${i + 1} de ${archivosPdf.length}...`);
         await procesarOperacionNativa({
@@ -82,7 +86,6 @@ export default function MergePdfScreen({ onVolver }) {
 
       setProgresoTexto('Uniendo y optimizando el tamaño final...');
 
-      // 2. Ejecución del Merge en el servidor
       const res = await fetch(`${CONFIGURACION.URL_API_BACKEND}/pdf/sesion-unir/procesar`, {
         method: 'POST',
         headers: {
@@ -123,7 +126,7 @@ export default function MergePdfScreen({ onVolver }) {
     <ScreenContainer
       titulo="Unir PDFs"
       subtitulo="Combina y reordena múltiples documentos"
-      iconoTitulo="📑"
+      iconoTitulo={<Feather name="layers" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -132,17 +135,22 @@ export default function MergePdfScreen({ onVolver }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={estilos.bannerGuia}>
-          <Text style={estilos.tituloGuia}>💡 Orden y Optimización</Text>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="accent">ORDEN SECUENCIAL</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Ensamblaje y Optimización</Text>
           <Text style={estilos.textoGuia}>
-            Organiza los documentos con las flechas ▲ y ▼. El resultado se procesará aplicando compresión para que no quede pesado.
+            Añade los archivos en cola, ordénalos con los controles de posición y genera un único documento optimizado.
           </Text>
         </View>
 
         <TouchableOpacity style={estilos.btnAgregar} onPress={agregarPdfs} activeOpacity={0.7}>
-          <Text style={estilos.iconoAgregar}>➕</Text>
+          <View style={estilos.iconoAgregarCaja}>
+            <Feather name="plus" size={18} color={theme.colors.foreground} />
+          </View>
           <View style={estilos.textosAgregar}>
             <Text style={estilos.textoAgregarPrincipal}>Seleccionar y Agregar PDFs</Text>
-            <Text style={estilos.textoAgregarSub}>Puedes seleccionar varios documentos</Text>
+            <Text style={estilos.textoAgregarSub}>Admite selección múltiple simultánea</Text>
           </View>
         </TouchableOpacity>
 
@@ -150,17 +158,17 @@ export default function MergePdfScreen({ onVolver }) {
           <View style={estilos.headerLista}>
             <Text style={estilos.tituloLista}>Documentos en cola ({archivosPdf.length})</Text>
             {archivosPdf.length > 0 && (
-              <TouchableOpacity onPress={() => setArchivosPdf([])}>
+              <TouchableOpacity onPress={() => setArchivosPdf([])} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Text style={estilos.textoLimpiar}>Limpiar todos</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {archivosPdf.length === 0 ? (
-            <View style={estilos.cajaVacia}>
-              <Text style={estilos.iconoVacio}>📂</Text>
+            <Card style={estilos.cajaVacia}>
+              <Feather name="inbox" size={28} color={theme.colors.mutedForeground} style={{ marginBottom: 8 }} />
               <Text style={estilos.textoVacio}>No has agregado ningún documento todavía.</Text>
-            </View>
+            </Card>
           ) : (
             archivosPdf.map((archivo, index) => (
               <View key={index} style={estilos.itemArchivo}>
@@ -183,7 +191,7 @@ export default function MergePdfScreen({ onVolver }) {
                     disabled={index === 0}
                     onPress={() => moverArriba(index)}
                   >
-                    <Text style={estilos.textoBtnOrden}>▲</Text>
+                    <Feather name="chevron-up" size={14} color={theme.colors.foreground} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -191,14 +199,14 @@ export default function MergePdfScreen({ onVolver }) {
                     disabled={index === archivosPdf.length - 1}
                     onPress={() => moverAbajo(index)}
                   >
-                    <Text style={estilos.textoBtnOrden}>▼</Text>
+                    <Feather name="chevron-down" size={14} color={theme.colors.foreground} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={estilos.btnEliminar}
                     onPress={() => eliminarArchivo(index)}
                   >
-                    <Text style={estilos.textoBtnEliminar}>✕</Text>
+                    <Feather name="trash-2" size={13} color={theme.colors.destructive} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -206,27 +214,19 @@ export default function MergePdfScreen({ onVolver }) {
           )}
         </View>
 
-        <TouchableOpacity
-          style={[estilos.btnUnir, (uniendo || archivosPdf.length < 2) && { opacity: 0.5 }]}
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarUnion}
           disabled={uniendo || archivosPdf.length < 2}
-          activeOpacity={0.8}
+          cargando={uniendo}
+          icon={!uniendo && <Feather name="check-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnUnir}
         >
-          {uniendo ? (
-            <View style={{ alignItems: 'center' }}>
-              <ActivityIndicator color="#FFFFFF" />
-              {progresoTexto ? (
-                <Text style={estilos.textoProgreso}>{progresoTexto}</Text>
-              ) : null}
-            </View>
-          ) : (
-            <Text style={estilos.textoBtnUnir}>
-              Unir {archivosPdf.length} PDFs y Compartir (_join.pdf)
-            </Text>
-          )}
-        </TouchableOpacity>
+          {uniendo ? progresoTexto || 'Procesando...' : `Unir ${archivosPdf.length} PDFs y Compartir`}
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
   );
@@ -237,179 +237,163 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
   bannerGuia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 16,
   },
+  bannerHeader: {
+    marginBottom: 8,
+  },
   tituloGuia: {
-    color: '#A78BFA',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
   textoGuia: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   btnAgregar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderWidth: 1.5,
-    borderColor: 'rgba(139, 92, 246, 0.4)',
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 18,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: 14,
+    marginBottom: 20,
   },
-  iconoAgregar: {
-    fontSize: 22,
+  iconoAgregarCaja: {
+    width: 36,
+    height: 36,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   textosAgregar: {
     flex: 1,
   },
   textoAgregarPrincipal: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   textoAgregarSub: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 2,
   },
   contenedorLista: {
-    marginBottom: 18,
+    marginBottom: 20,
   },
   headerLista: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   tituloLista: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#CBD5E1',
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.colors.foreground,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   textoLimpiar: {
     fontSize: 12,
-    color: '#EF4444',
-    fontWeight: '600',
+    color: theme.colors.destructive,
+    fontWeight: '500',
   },
   cajaVacia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 26,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  iconoVacio: {
-    fontSize: 30,
-    marginBottom: 6,
+    justifyContent: 'center',
+    padding: 28,
   },
   textoVacio: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 13,
+    textAlign: 'center',
   },
   itemArchivo: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
     padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: theme.colors.border,
   },
   badgePosicion: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    backgroundColor: '#7C3AED',
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   textoPosicion: {
-    color: '#FFFFFF',
+    color: theme.colors.foreground,
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   infoArchivo: {
     flex: 1,
+    marginRight: 8,
   },
   nombreArchivo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   pesoArchivo: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 11,
     marginTop: 2,
   },
   filaBotonesAccion: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
   btnOrden: {
-    backgroundColor: '#1E293B',
+    backgroundColor: theme.colors.secondary,
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 6,
-  },
-  textoBtnOrden: {
-    color: '#CBD5E1',
-    fontSize: 10,
-    fontWeight: 'bold',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   btnEliminar: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: theme.colors.destructiveMuted,
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-  },
-  textoBtnEliminar: {
-    color: '#EF4444',
-    fontSize: 12,
-    fontWeight: 'bold',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+    marginLeft: 4,
   },
   btnUnir: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: '#7C3AED',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  textoBtnUnir: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  textoProgreso: {
-    color: '#E0E7FF',
-    fontSize: 12,
-    marginTop: 6,
-    fontWeight: '500',
+    width: '100%',
   },
 });

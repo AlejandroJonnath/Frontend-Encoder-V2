@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +11,10 @@ import {
 } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 
 export default function RegisterScreen({ onIrALogin }) {
   const [nombre, setNombre] = useState('');
@@ -77,105 +79,86 @@ export default function RegisterScreen({ onIrALogin }) {
           contentContainerStyle={estilos.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <View style={estilos.tarjeta}>
-            <Text style={estilos.titulo}>Únete a PDF Master</Text>
-            <Text style={estilos.subtitulo}>
-              Ingresa tus datos para registrarte en el sistema
-            </Text>
+          <Card style={estilos.tarjeta}>
+            <CardHeader style={estilos.headerTarjeta}>
+              <CardTitle style={estilos.titulo}>Crear Cuenta</CardTitle>
+              <CardDescription style={estilos.subtitulo}>
+                Únete a EncoderGoti para gestionar tus documentos y firmas
+              </CardDescription>
+            </CardHeader>
 
-            <View style={estilos.filaDoble}>
-              <View style={[estilos.grupoInput, { flex: 1, marginRight: 8 }]}>
-                <Text style={estilos.etiqueta}>Nombre</Text>
-                <TextInput
-                  style={estilos.input}
-                  placeholder="Juan"
-                  placeholderTextColor="#64748B"
-                  value={nombre}
-                  onChangeText={setNombre}
-                />
+            <CardContent>
+              <View style={estilos.filaDoble}>
+                <View style={[estilos.columna, { marginRight: 6 }]}>
+                  <Input
+                    label="Nombre"
+                    placeholder="Juan"
+                    value={nombre}
+                    onChangeText={setNombre}
+                  />
+                </View>
+                <View style={[estilos.columna, { marginLeft: 6 }]}>
+                  <Input
+                    label="Apellido"
+                    placeholder="Pérez"
+                    value={apellido}
+                    onChangeText={setApellido}
+                  />
+                </View>
               </View>
 
-              <View style={[estilos.grupoInput, { flex: 1, marginLeft: 8 }]}>
-                <Text style={estilos.etiqueta}>Apellido</Text>
-                <TextInput
-                  style={estilos.input}
-                  placeholder="Pérez"
-                  placeholderTextColor="#64748B"
-                  value={apellido}
-                  onChangeText={setApellido}
-                />
-              </View>
-            </View>
-
-            <View style={estilos.grupoInput}>
-              <Text style={estilos.etiqueta}>Nombre de Usuario</Text>
-              <TextInput
-                style={estilos.input}
-                placeholder="juanperez26"
-                placeholderTextColor="#64748B"
+              <Input
+                label="Nombre de Usuario"
+                placeholder="juanperez"
                 autoCapitalize="none"
                 value={username}
                 onChangeText={setUsername}
               />
-            </View>
 
-            <View style={estilos.grupoInput}>
-              <Text style={estilos.etiqueta}>Correo Electrónico</Text>
-              <TextInput
-                style={estilos.input}
+              <Input
+                label="Correo Electrónico"
                 placeholder="tu@correo.com"
-                placeholderTextColor="#64748B"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
               />
-            </View>
 
-            <View style={estilos.grupoInput}>
-              <Text style={estilos.etiqueta}>Contraseña</Text>
-              <TextInput
-                style={estilos.input}
+              <Input
+                label="Contraseña"
                 placeholder="Mínimo 6 caracteres"
-                placeholderTextColor="#64748B"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
               />
-            </View>
 
-            <View style={estilos.grupoInput}>
-              <Text style={estilos.etiqueta}>Confirmar Contraseña</Text>
-              <TextInput
-                style={estilos.input}
+              <Input
+                label="Confirmar Contraseña"
                 placeholder="Repite tu contraseña"
-                placeholderTextColor="#64748B"
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
-            </View>
 
-            <TouchableOpacity
-              style={[estilos.botonPrincipal, bloqueado && { opacity: 0.7 }]}
-              onPress={manejarRegistro}
-              disabled={bloqueado}
-              activeOpacity={0.8}
-            >
-              {bloqueado ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={estilos.textoBotonPrincipal}>Crear Cuenta</Text>
-              )}
-            </TouchableOpacity>
+              <Button
+                variant="default"
+                size="lg"
+                onPress={manejarRegistro}
+                cargando={bloqueado}
+                disabled={bloqueado}
+                style={estilos.botonPrincipal}
+              >
+                Crear Cuenta
+              </Button>
 
-            <View style={estilos.filaRegistro}>
-              <Text style={estilos.textoSecundario}>¿Ya tienes una cuenta? </Text>
-              <TouchableOpacity onPress={onIrALogin}>
-                <Text style={estilos.linkRegistro}>Inicia sesión</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+              <View style={estilos.filaRegistro}>
+                <Text style={estilos.textoSecundario}>¿Ya tienes una cuenta? </Text>
+                <TouchableOpacity onPress={onIrALogin}>
+                  <Text style={estilos.linkRegistro}>Inicia sesión</Text>
+                </TouchableOpacity>
+              </View>
+            </CardContent>
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -184,78 +167,37 @@ export default function RegisterScreen({ onIrALogin }) {
 
 const estilos = StyleSheet.create({
   scroll: {
-    padding: 20,
-    paddingBottom: 30,
+    padding: 18,
+    paddingBottom: 32,
   },
   tarjeta: {
-    backgroundColor: '#0F172A',
-    borderRadius: 20,
     padding: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 6,
+  },
+  headerTarjeta: {
+    marginBottom: 16,
   },
   titulo: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-    marginBottom: 4,
-    textAlign: 'center',
+    fontWeight: '700',
+    color: theme.colors.foreground,
+    letterSpacing: -0.3,
   },
   subtitulo: {
     fontSize: 13,
-    color: '#94A3B8',
-    marginBottom: 20,
-    textAlign: 'center',
+    color: theme.colors.mutedForeground,
+    marginTop: 4,
   },
   filaDoble: {
     flexDirection: 'row',
     width: '100%',
   },
-  grupoInput: {
-    width: '100%',
-    marginBottom: 14,
-  },
-  etiqueta: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: '#090D16',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#F8FAFC',
+  columna: {
+    flex: 1,
   },
   botonPrincipal: {
     width: '100%',
-    backgroundColor: '#0284C7',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
     marginTop: 8,
-    marginBottom: 16,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  textoBotonPrincipal: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    marginBottom: 18,
   },
   filaRegistro: {
     flexDirection: 'row',
@@ -264,11 +206,12 @@ const estilos = StyleSheet.create({
   },
   textoSecundario: {
     fontSize: 13,
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
   },
   linkRegistro: {
     fontSize: 13,
-    color: '#38BDF8',
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

@@ -3,19 +3,22 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
   Modal,
   SafeAreaView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import PdfRealDocumentViewer from '../../components/PdfRealDocumentViewer';
-import { procesarOperacionNativa, leerUriComoBase64 } from '../../utils/apiUploader';
+import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 export default function SignPdfScreen({ onVolver }) {
   const [archivoPdf, setArchivoPdf] = useState(null);
@@ -59,7 +62,6 @@ export default function SignPdfScreen({ onVolver }) {
   };
 
   const ejecutarFirma = async () => {
-    // Validar con los valores del estado actuales
     if (!archivoPdf) {
       Alert.alert('Falta el PDF', 'Selecciona el documento que deseas firmar.');
       return;
@@ -76,7 +78,6 @@ export default function SignPdfScreen({ onVolver }) {
     try {
       setFirmando(true);
 
-      // 1. Subir el certificado .p12 para asegurar integridad binaria sin truncamiento en cabeceras
       const resP12 = await procesarOperacionNativa({
         endpoint: '/pdf/subir-p12',
         archivoUri: archivoP12.uri,
@@ -91,7 +92,6 @@ export default function SignPdfScreen({ onVolver }) {
       const nombreBase = archivoPdf.name.replace(/\.pdf$/i, '');
       const nombreSalida = `${nombreBase}_signed.pdf`;
 
-      // 2. Firmar el PDF enviando el token del certificado
       await procesarOperacionNativa({
         endpoint: '/pdf/firmar',
         archivoUri: archivoPdf.uri,
@@ -115,9 +115,9 @@ export default function SignPdfScreen({ onVolver }) {
 
   return (
     <ScreenContainer
-      titulo="Firmar con .p12 (FirmaEC)"
-      subtitulo="Firma digital válida • Previsualizador interactivo"
-      iconoTitulo="🖋️"
+      titulo="Firma Electrónica"
+      subtitulo="PAdES Estándar Ecuador • Certificado .p12"
+      iconoTitulo={<Feather name="shield" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -125,123 +125,157 @@ export default function SignPdfScreen({ onVolver }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner de Guía */}
+        {/* Banner Informativo */}
         <View style={estilos.bannerGuia}>
-          <Text style={estilos.tituloGuia}>💡 Previsualizador Real Estilo FirmaEC</Text>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="accent">PREVISUALIZADOR REAL</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Estándar FirmaEC PAdES</Text>
           <Text style={estilos.textoGuia}>
-            Visualiza el contenido real de tu PDF y arrastra la estampa azul exactamente donde desees que se aplique la firma digital.
+            Carga tu documento y posiciona con precisión milimétrica la estampa digital directamente sobre el visor de la hoja.
           </Text>
         </View>
 
         {/* Paso 1: PDF */}
-        <View style={estilos.cardPaso}>
-          <View style={estilos.headerPaso}>
-            <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>1</Text></View>
-            <Text style={estilos.tituloPaso}>Documento PDF a Firmar</Text>
-          </View>
-
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarPdf} activeOpacity={0.7}>
-            <Text style={estilos.iconoPicker}>{archivoPdf ? '📄' : '📁'}</Text>
-            <View style={estilos.infoPicker}>
-              <Text style={estilos.textoPickerPrincipal}>
-                {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
-              </Text>
-              <Text style={estilos.textoPickerSub}>
-                {archivoPdf ? `${(archivoPdf.size / (1024 * 1024)).toFixed(2)} MB cargado` : 'Toca para abrir tus archivos'}
-              </Text>
+        <Card style={estilos.cardPaso}>
+          <CardHeader style={estilos.headerPaso}>
+            <View style={estilos.badgePaso}>
+              <Text style={estilos.textoNumeroPaso}>1</Text>
             </View>
-            {archivoPdf && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {/* Paso 2: Ubicar Firma mediante Viñeta Enfocada */}
-        {archivoPdf && (
-          <View style={estilos.cardPaso}>
-            <View style={estilos.headerPaso}>
-              <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>2</Text></View>
-              <Text style={estilos.tituloPaso}>Posición de la Firma</Text>
+            <View style={{ flex: 1 }}>
+              <CardTitle style={estilos.tituloPaso}>Documento PDF</CardTitle>
+              <CardDescription>Archivo a certificar criptográficamente</CardDescription>
             </View>
+          </CardHeader>
 
-            <View style={estilos.cajaResumenPosicion}>
-              <View style={estilos.iconoPosicion}><Text style={{ fontSize: 24 }}>📍</Text></View>
-              <View style={{ flex: 1 }}>
-                <Text style={estilos.textoPosicionTitulo}>Página {posicionFirma.pagina}</Text>
-                <Text style={estilos.textoPosicionCoords}>
-                  Coordenadas: X={Math.round(posicionFirma.x)} pt • Y={Math.round(posicionFirma.y)} pt
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarPdf} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoPdf ? "file-text" : "upload-cloud"}
+                  size={20}
+                  color={archivoPdf ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoPdf ? `${(archivoPdf.size / (1024 * 1024)).toFixed(2)} MB cargado` : 'Toca para examinar tu dispositivo'}
                 </Text>
               </View>
-              <View style={estilos.badgeFijado}>
-                <Text style={estilos.textoBadgeFijado}>✓ Fijada</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={estilos.btnAbrirViñeta}
-              onPress={() => setModalVisorVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={estilos.textoBtnAbrirViñeta}>🔍 Abrir Viñeta de Ubicación (Pantalla Completa)</Text>
+              {archivoPdf && (
+                <Badge variant="success">Listo</Badge>
+              )}
             </TouchableOpacity>
+          </CardContent>
+        </Card>
 
-            <Text style={estilos.textoGuiaViñeta}>
-              Abre el documento en una viñeta enfocada para arrastrar o pulsar la firma con total libertad sin que la pantalla del celular se mueva.
-            </Text>
-          </View>
+        {/* Paso 2: Posicionamiento */}
+        {archivoPdf && (
+          <Card style={estilos.cardPaso}>
+            <CardHeader style={estilos.headerPaso}>
+              <View style={estilos.badgePaso}>
+                <Text style={estilos.textoNumeroPaso}>2</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <CardTitle style={estilos.tituloPaso}>Posición de la Firma</CardTitle>
+                <CardDescription>Ubicación exacta sobre el documento</CardDescription>
+              </View>
+            </CardHeader>
+
+            <CardContent>
+              <View style={estilos.cajaResumenPosicion}>
+                <Feather name="map-pin" size={18} color={theme.colors.foreground} style={{ marginRight: 10 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={estilos.textoPosicionTitulo}>Página {posicionFirma.pagina}</Text>
+                  <Text style={estilos.textoPosicionCoords}>
+                    X: {Math.round(posicionFirma.x)} pt • Y: {Math.round(posicionFirma.y)} pt
+                  </Text>
+                </View>
+                <Badge variant="secondary">Fijada</Badge>
+              </View>
+
+              <Button
+                variant="outline"
+                onPress={() => setModalVisorVisible(true)}
+                icon={<Feather name="maximize-2" size={14} color={theme.colors.foreground} />}
+                style={estilos.btnAbrirViñeta}
+              >
+                Abrir Viñeta de Ubicación
+              </Button>
+
+              <Text style={estilos.textoGuiaViñeta}>
+                Permite arrastrar la estampa de firma en pantalla completa con bloqueo de scroll.
+              </Text>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Paso 3: Certificado .p12 y clave */}
-        <View style={estilos.cardPaso}>
-          <View style={estilos.headerPaso}>
-            <View style={estilos.badgeNumero}><Text style={estilos.textoNumero}>3</Text></View>
-            <Text style={estilos.tituloPaso}>Certificado Digital (.p12 / .pfx)</Text>
-          </View>
-
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarP12} activeOpacity={0.7}>
-            <Text style={estilos.iconoPicker}>{archivoP12 ? '🔑' : '🔐'}</Text>
-            <View style={estilos.infoPicker}>
-              <Text style={estilos.textoPickerPrincipal}>
-                {archivoP12 ? archivoP12.name : 'Seleccionar Archivo .p12 o .pfx'}
-              </Text>
-              <Text style={estilos.textoPickerSub}>
-                {archivoP12 ? 'Certificado cargado' : 'Emitido por BCE, Security Data, etc.'}
-              </Text>
+        {/* Paso 3: Certificado .p12 y contraseña */}
+        <Card style={estilos.cardPaso}>
+          <CardHeader style={estilos.headerPaso}>
+            <View style={estilos.badgePaso}>
+              <Text style={estilos.textoNumeroPaso}>{archivoPdf ? '3' : '2'}</Text>
             </View>
-            {archivoP12 && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <CardTitle style={estilos.tituloPaso}>Certificado Digital (.p12 / .pfx)</CardTitle>
+              <CardDescription>Entidades autorizadas (BCE, Security Data, etc.)</CardDescription>
+            </View>
+          </CardHeader>
 
-          <View style={estilos.campoClave}>
-            <Text style={estilos.etiquetaClave}>Contraseña del Certificado</Text>
-            <TextInput
-              style={estilos.inputClave}
-              placeholder="Escribe la clave de tu firma digital"
-              placeholderTextColor="#64748B"
-              secureTextEntry
-              value={contrasenaP12}
-              onChangeText={setContrasenaP12}
-            />
-          </View>
-        </View>
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarP12} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoP12 ? "key" : "lock"}
+                  size={20}
+                  color={archivoP12 ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoP12 ? archivoP12.name : 'Seleccionar Archivo .p12 o .pfx'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoP12 ? 'Certificado cargado' : 'Contenedor criptográfico de firma'}
+                </Text>
+              </View>
+              {archivoP12 && (
+                <Badge variant="success">Listo</Badge>
+              )}
+            </TouchableOpacity>
 
-        {/* Botón de Acción Principal */}
-        <TouchableOpacity
-          style={[estilos.btnFirmar, (firmando || !archivoPdf || !archivoP12) && { opacity: 0.6 }]}
+            <View style={{ marginTop: 14 }}>
+              <Input
+                label="Contraseña del Certificado"
+                placeholder="Ingresa la contraseña privada"
+                secureTextEntry
+                value={contrasenaP12}
+                onChangeText={setContrasenaP12}
+              />
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* Botón Principal */}
+        <Button
+          variant="default"
+          size="lg"
           onPress={ejecutarFirma}
           disabled={firmando || !archivoPdf || !archivoP12}
-          activeOpacity={0.8}
+          cargando={firmando}
+          icon={!firmando && <Feather name="check-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnFirmar}
         >
-          {firmando ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={estilos.textoBtnFirmar}>
-              Firmar y Compartir (_signed.pdf)
-            </Text>
-          )}
-        </TouchableOpacity>
+          Firmar y Compartir Documento
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Viñeta Enfocada a Pantalla Completa para Ubicar Firma */}
+      {/* Modal Visor Pantalla Completa */}
       <Modal
         visible={modalVisorVisible}
         animationType="slide"
@@ -251,9 +285,9 @@ export default function SignPdfScreen({ onVolver }) {
         <SafeAreaView style={estilos.modalContenedor}>
           <View style={estilos.modalHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={estilos.modalTitulo}>📍 Ubicar Firma en Documento</Text>
+              <Text style={estilos.modalTitulo}>Ubicar Firma en Documento</Text>
               <Text style={estilos.modalSubtitulo}>
-                Arrastra la estampa azul o pulsa sobre la hoja donde deseas firmar
+                Arrastra la estampa azul hasta la posición deseada
               </Text>
             </View>
             <TouchableOpacity
@@ -261,7 +295,7 @@ export default function SignPdfScreen({ onVolver }) {
               onPress={() => setModalVisorVisible(false)}
               activeOpacity={0.7}
             >
-              <Text style={estilos.textoBtnCerrarModal}>✕</Text>
+              <Feather name="x" size={18} color={theme.colors.foreground} />
             </TouchableOpacity>
           </View>
 
@@ -282,13 +316,14 @@ export default function SignPdfScreen({ onVolver }) {
                 Página {posicionFirma.pagina} • X: {Math.round(posicionFirma.x)} pt • Y: {Math.round(posicionFirma.y)} pt
               </Text>
             </View>
-            <TouchableOpacity
-              style={estilos.btnConfirmarModal}
+            <Button
+              variant="default"
+              size="lg"
               onPress={() => setModalVisorVisible(false)}
-              activeOpacity={0.8}
+              icon={<Feather name="check" size={16} color={theme.colors.primaryForeground} />}
             >
-              <Text style={estilos.textoBtnConfirmarModal}>✓ Guardar y Fijar Ubicación</Text>
-            </TouchableOpacity>
+              Fijar Ubicación
+            </Button>
           </View>
         </SafeAreaView>
       </Modal>
@@ -301,252 +336,182 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
   bannerGuia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 16,
   },
+  bannerHeader: {
+    marginBottom: 8,
+  },
   tituloGuia: {
-    color: '#38BDF8',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
   textoGuia: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   cardPaso: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 16,
+    padding: 16,
   },
   headerPaso: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  badgeNumero: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0284C7',
+  badgePaso: {
+    width: 26,
+    height: 26,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
-  textoNumero: {
-    color: '#FFFFFF',
+  textoNumeroPaso: {
+    color: theme.colors.foreground,
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   tituloPaso: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 15,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#090D16',
-    borderWidth: 1.5,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
-    borderStyle: 'dashed',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
   },
-  iconoPicker: {
-    fontSize: 24,
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  infoPicker: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  textoPickerPrincipal: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  textoPickerSub: {
-    color: '#64748B',
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 2,
-  },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  campoClave: {
-    marginTop: 14,
-  },
-  etiquetaClave: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  inputClave: {
-    backgroundColor: '#090D16',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: '#F8FAFC',
-    fontSize: 14,
-  },
-  btnFirmar: {
-    backgroundColor: '#0284C7',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 6,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  textoBtnFirmar: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-    letterSpacing: 0.3,
   },
   cajaResumenPosicion: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(56, 189, 248, 0.08)',
-    borderRadius: 12,
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.radius.md,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 12,
   },
-  iconoPosicion: {
-    marginRight: 10,
-  },
   textoPosicionTitulo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   textoPosicionCoords: {
-    color: '#94A3B8',
-    fontSize: 11,
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
     marginTop: 2,
   },
-  badgeFijado: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-  },
-  textoBadgeFijado: {
-    color: '#10B981',
-    fontSize: 10,
-    fontWeight: '700',
-  },
   btnAbrirViñeta: {
-    backgroundColor: '#0369A1',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
+    width: '100%',
     marginBottom: 8,
   },
-  textoBtnAbrirViñeta: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
   textoGuiaViñeta: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',
   },
+  btnFirmar: {
+    width: '100%',
+    marginTop: 8,
+  },
   modalContenedor: {
     flex: 1,
-    backgroundColor: '#0B1120',
+    backgroundColor: theme.colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-    backgroundColor: '#0F172A',
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
   },
   modalTitulo: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
   modalSubtitulo: {
-    color: '#94A3B8',
-    fontSize: 11,
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
     marginTop: 2,
   },
   btnCerrarModal: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
   },
-  textoBtnCerrarModal: {
-    color: '#F8FAFC',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   modalCuerpo: {
     flex: 1,
-    padding: 10,
+    backgroundColor: '#000000',
   },
   modalFooter: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#0F172A',
+    paddingVertical: 14,
+    backgroundColor: theme.colors.card,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    borderTopColor: theme.colors.border,
   },
   modalInfoCoords: {
-    marginBottom: 8,
+    marginBottom: 10,
     alignItems: 'center',
   },
   modalCoordsTexto: {
-    color: '#38BDF8',
+    color: theme.colors.ring,
     fontSize: 12,
     fontWeight: '600',
-  },
-  btnConfirmarModal: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  textoBtnConfirmarModal: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });

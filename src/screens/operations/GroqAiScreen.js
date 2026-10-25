@@ -4,14 +4,18 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
 import { CONFIGURACION } from '../../config/constantes';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 function RenderizadorTextoIa({ texto }) {
   if (!texto) return null;
@@ -26,7 +30,6 @@ function RenderizadorTextoIa({ texto }) {
           return <View key={index} style={{ height: 6 }} />;
         }
 
-        // Título (# Título o ## Título)
         if (lineaLimpia.startsWith('#')) {
           const textoTitulo = lineaLimpia.replace(/^#+\s*/, '').replace(/\*\*/g, '');
           return (
@@ -36,13 +39,11 @@ function RenderizadorTextoIa({ texto }) {
           );
         }
 
-        // Viñeta (- texto o * texto o • texto o 1. texto)
         const esVineta = /^[-*•]\s+/.test(lineaLimpia) || /^\d+\.\s+/.test(lineaLimpia);
         const prefijoMatch = lineaLimpia.match(/^[-*•\d.]+\s+/);
         const prefijo = prefijoMatch ? prefijoMatch[0] : '';
         const contenido = esVineta ? lineaLimpia.slice(prefijo.length) : lineaLimpia;
 
-        // Separar por pares de asteriscos **
         const partes = contenido.split('**');
 
         if (esVineta) {
@@ -166,8 +167,8 @@ export default function GroqAiScreen({ onVolver }) {
   return (
     <ScreenContainer
       titulo="Groq AI Documental"
-      subtitulo="Resumen dinámico y traducción fiel"
-      iconoTitulo="🤖"
+      subtitulo="Síntesis ejecutiva y traducción contextual"
+      iconoTitulo={<Feather name="cpu" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -175,142 +176,182 @@ export default function GroqAiScreen({ onVolver }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        <View style={estilos.selectorPestanas}>
+        {/* Selector de Pestañas estilo Tabs de shadcn */}
+        <View style={estilos.tabsContenedor}>
           <TouchableOpacity
-            style={[estilos.pestana, pestanaActiva === 'resumen' && estilos.pestanaActiva]}
+            style={[estilos.tabBoton, pestanaActiva === 'resumen' && estilos.tabBotonActivo]}
             onPress={() => { setPestanaActiva('resumen'); setResultado(null); }}
             activeOpacity={0.8}
           >
-            <Text style={[estilos.textoPestana, pestanaActiva === 'resumen' && estilos.textoPestanaActiva]}>
-              📝 Resumen Dinámico
+            <Feather
+              name="file-text"
+              size={14}
+              color={pestanaActiva === 'resumen' ? theme.colors.foreground : theme.colors.mutedForeground}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={[estilos.tabTexto, pestanaActiva === 'resumen' && estilos.tabTextoActivo]}>
+              Resumen Ejecutivo
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[estilos.pestana, pestanaActiva === 'traduccion' && estilos.pestanaActiva]}
+            style={[estilos.tabBoton, pestanaActiva === 'traduccion' && estilos.tabBotonActivo]}
             onPress={() => { setPestanaActiva('traduccion'); setResultado(null); }}
             activeOpacity={0.8}
           >
-            <Text style={[estilos.textoPestana, pestanaActiva === 'traduccion' && estilos.textoPestanaActiva]}>
-              🌐 Traductor Fiel
+            <Feather
+              name="globe"
+              size={14}
+              color={pestanaActiva === 'traduccion' ? theme.colors.foreground : theme.colors.mutedForeground}
+              style={{ marginRight: 6 }}
+            />
+            <Text style={[estilos.tabTexto, pestanaActiva === 'traduccion' && estilos.tabTextoActivo]}>
+              Traductor Multilingüe
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={estilos.bannerGuia}>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="accent">PROCESAMIENTO LPU</Badge>
+          </View>
           <Text style={estilos.tituloGuia}>
-            {pestanaActiva === 'resumen' ? '💡 Síntesis Clara y Precisa' : '💡 Selección de Idioma Origen y Destino'}
+            {pestanaActiva === 'resumen' ? 'Extracción y Síntesis' : 'Traducción con Fidelidad Contextual'}
           </Text>
           <Text style={estilos.textoGuia}>
             {pestanaActiva === 'resumen'
-              ? 'El resumen va directo al grano: propósito medular del documento, puntos clave destacados y conclusiones esenciales sin rellenos.'
-              : 'Selecciona el idioma nativo de tu archivo y el idioma al que deseas traducirlo para evitar confusiones y garantizar fidelidad absoluta.'}
+              ? 'Identifica el propósito medular del documento, puntos clave y conclusiones sin redundancias.'
+              : 'Traduce preservando la terminología técnica entre idiomas sin inventar ni omitir secciones.'}
           </Text>
         </View>
 
-        <View style={estilos.card}>
-          <Text style={estilos.etiquetaCard}>DOCUMENTO PDF PARA ANÁLISIS</Text>
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarPdf} activeOpacity={0.7}>
-            <Text style={estilos.iconoPicker}>{archivoPdf ? '📄' : '📁'}</Text>
-            <View style={estilos.infoPicker}>
-              <Text style={estilos.textoPickerPrincipal}>
-                {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
-              </Text>
-              <Text style={estilos.textoPickerSub}>
-                {archivoPdf ? 'Documento cargado correctamente' : 'Toca para examinar archivos'}
-              </Text>
-            </View>
-            {archivoPdf && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
+        {/* Dropzone de PDF */}
+        <Card style={estilos.card}>
+          <CardHeader>
+            <CardTitle>Documento de Entrada</CardTitle>
+            <CardDescription>Archivo PDF para análisis sintáctico</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarPdf} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoPdf ? "file-text" : "upload-cloud"}
+                  size={20}
+                  color={archivoPdf ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoPdf ? archivoPdf.name : 'Seleccionar Documento PDF'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoPdf ? 'Documento cargado correctamente' : 'Toca para examinar tus archivos'}
+                </Text>
+              </View>
+              {archivoPdf && <Badge variant="success">Listo</Badge>}
+            </TouchableOpacity>
+          </CardContent>
+        </Card>
 
         {pestanaActiva === 'traduccion' && (
           <>
-            {/* 1. Idioma Nativo / Origen */}
-            <View style={estilos.card}>
-              <Text style={estilos.etiquetaCard}>1. IDIOMA NATIVO (ORIGEN)</Text>
-              <View style={estilos.gridIdiomas}>
-                {IDIOMAS_ORIGEN_LISTA.map((idioma) => (
-                  <TouchableOpacity
-                    key={`orig_${idioma.codigo}`}
-                    style={[
-                      estilos.btnIdioma,
-                      idiomaOrigen === idioma.nombre && estilos.btnIdiomaActivo
-                    ]}
-                    onPress={() => setIdiomaOrigen(idioma.nombre)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={estilos.bandera}>{idioma.bandera}</Text>
-                    <Text style={[
-                      estilos.nombreIdioma,
-                      idiomaOrigen === idioma.nombre && estilos.nombreIdiomaActivo
-                    ]}>
-                      {idioma.nombre}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            {/* Idioma Origen */}
+            <Card style={estilos.card}>
+              <CardHeader>
+                <CardTitle style={{ fontSize: 14 }}>Idioma Origen</CardTitle>
+                <CardDescription>Idioma del texto original</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={estilos.gridIdiomas}>
+                  {IDIOMAS_ORIGEN_LISTA.map((idioma) => (
+                    <TouchableOpacity
+                      key={`orig_${idioma.codigo}`}
+                      style={[
+                        estilos.btnIdioma,
+                        idiomaOrigen === idioma.nombre && estilos.btnIdiomaActivo
+                      ]}
+                      onPress={() => setIdiomaOrigen(idioma.nombre)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={estilos.bandera}>{idioma.bandera}</Text>
+                      <Text style={[
+                        estilos.nombreIdioma,
+                        idiomaOrigen === idioma.nombre && estilos.nombreIdiomaActivo
+                      ]}>
+                        {idioma.nombre}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </CardContent>
+            </Card>
 
-            {/* 2. Idioma Destino */}
-            <View style={estilos.card}>
-              <Text style={estilos.etiquetaCard}>2. IDIOMA A TRADUCIR (DESTINO)</Text>
-              <View style={estilos.gridIdiomas}>
-                {CONFIGURACION.IDIOMAS_TRADUCCION.map((idioma) => (
-                  <TouchableOpacity
-                    key={`dest_${idioma.codigo}`}
-                    style={[
-                      estilos.btnIdioma,
-                      idiomaDestino === idioma.nombre && estilos.btnIdiomaActivo
-                    ]}
-                    onPress={() => setIdiomaDestino(idioma.nombre)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={estilos.bandera}>{idioma.bandera}</Text>
-                    <Text style={[
-                      estilos.nombreIdioma,
-                      idiomaDestino === idioma.nombre && estilos.nombreIdiomaActivo
-                    ]}>
-                      {idioma.nombre}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            {/* Idioma Destino */}
+            <Card style={estilos.card}>
+              <CardHeader>
+                <CardTitle style={{ fontSize: 14 }}>Idioma Destino</CardTitle>
+                <CardDescription>Idioma hacia el cual traducir</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <View style={estilos.gridIdiomas}>
+                  {CONFIGURACION.IDIOMAS_TRADUCCION.map((idioma) => (
+                    <TouchableOpacity
+                      key={`dest_${idioma.codigo}`}
+                      style={[
+                        estilos.btnIdioma,
+                        idiomaDestino === idioma.nombre && estilos.btnIdiomaActivo
+                      ]}
+                      onPress={() => setIdiomaDestino(idioma.nombre)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={estilos.bandera}>{idioma.bandera}</Text>
+                      <Text style={[
+                        estilos.nombreIdioma,
+                        idiomaDestino === idioma.nombre && estilos.nombreIdiomaActivo
+                      ]}>
+                        {idioma.nombre}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </CardContent>
+            </Card>
           </>
         )}
 
-        <TouchableOpacity
-          style={[estilos.btnProcesar, (procesando || !archivoPdf) && { opacity: 0.5 }]}
+        {/* Botón Acción */}
+        <Button
+          variant="default"
+          size="lg"
           onPress={pestanaActiva === 'resumen' ? ejecutarResumen : ejecutarTraduccion}
           disabled={procesando || !archivoPdf}
-          activeOpacity={0.8}
+          cargando={procesando}
+          icon={!procesando && <Feather name="zap" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnProcesar}
         >
-          {procesando ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={estilos.textoBtnProcesar}>
-              {pestanaActiva === 'resumen'
-                ? '⚡ Generar Resumen'
-                : `⚡ Traducir de ${idiomaOrigen} a ${idiomaDestino}`}
-            </Text>
-          )}
-        </TouchableOpacity>
+          {pestanaActiva === 'resumen'
+            ? 'Generar Resumen con IA'
+            : `Traducir a ${idiomaDestino}`}
+        </Button>
 
+        {/* Resultado */}
         {resultado && (
-          <View style={estilos.tarjetaResultado}>
-            <View style={estilos.headerResultado}>
-              <Text style={estilos.tituloResultado}>
-                {pestanaActiva === 'resumen' ? '📋 Resumen Generado' : `🌐 Traducción a ${idiomaDestino}`}
-              </Text>
-            </View>
-            <ScrollView nestedScrollEnabled style={estilos.scrollResultado}>
-              <RenderizadorTextoIa texto={resultado} />
-            </ScrollView>
-          </View>
+          <Card style={estilos.tarjetaResultado}>
+            <CardHeader style={estilos.headerResultado}>
+              <CardTitle style={{ fontSize: 15 }}>
+                {pestanaActiva === 'resumen' ? 'Resumen Generado' : `Traducción a ${idiomaDestino}`}
+              </CardTitle>
+              <Badge variant="accent">Groq LPU</Badge>
+            </CardHeader>
+            <CardContent>
+              <ScrollView nestedScrollEnabled style={estilos.scrollResultado}>
+                <RenderizadorTextoIa texto={resultado} />
+              </ScrollView>
+            </CardContent>
+          </Card>
         )}
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </ScreenContainer>
   );
@@ -321,100 +362,96 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
-  selectorPestanas: {
+  tabsContenedor: {
     flexDirection: 'row',
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
-    padding: 4,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
+    padding: 3,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: theme.colors.border,
   },
-  pestana: {
+  tabBoton: {
     flex: 1,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: theme.radius.sm,
   },
-  pestanaActiva: {
-    backgroundColor: '#4338CA',
+  tabBotonActivo: {
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  textoPestana: {
-    fontSize: 12,
+  tabTexto: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.colors.mutedForeground,
+  },
+  tabTextoActivo: {
+    color: theme.colors.foreground,
     fontWeight: '600',
-    color: '#94A3B8',
-  },
-  textoPestanaActiva: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
   },
   bannerGuia: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderColor: theme.colors.border,
     marginBottom: 16,
   },
+  bannerHeader: {
+    marginBottom: 8,
+  },
   tituloGuia: {
-    color: '#818CF8',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
   textoGuia: {
-    color: '#94A3B8',
-    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 16,
   },
-  etiquetaCard: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginBottom: 10,
-    letterSpacing: 0.5,
-  },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#090D16',
-    borderWidth: 1.5,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
-    borderStyle: 'dashed',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
   },
-  iconoPicker: {
-    fontSize: 24,
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  infoPicker: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  textoPickerPrincipal: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
-  textoPickerSub: {
-    color: '#64748B',
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginTop: 2,
-  },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   gridIdiomas: {
     flexDirection: 'row',
@@ -424,83 +461,59 @@ const estilos = StyleSheet.create({
   btnIdioma: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#090D16',
+    backgroundColor: theme.colors.inputBackground,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: theme.colors.border,
   },
   btnIdiomaActivo: {
-    borderColor: '#818CF8',
-    backgroundColor: 'rgba(79, 70, 229, 0.25)',
+    borderColor: theme.colors.foreground,
+    backgroundColor: theme.colors.secondary,
   },
   bandera: {
-    fontSize: 16,
+    fontSize: 14,
     marginRight: 6,
   },
   nombreIdioma: {
-    fontSize: 13,
-    color: '#CBD5E1',
+    fontSize: 12,
+    color: theme.colors.mutedForeground,
   },
   nombreIdiomaActivo: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontWeight: '600',
   },
   btnProcesar: {
-    backgroundColor: '#4338CA',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 18,
-    shadowColor: '#4338CA',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  textoBtnProcesar: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
+    width: '100%',
+    marginBottom: 16,
   },
   tarjetaResultado: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1.5,
-    borderColor: 'rgba(99, 102, 241, 0.35)',
+    marginTop: 6,
   },
   headerResultado: {
-    marginBottom: 10,
-  },
-  tituloResultado: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   scrollResultado: {
-    maxHeight: 350,
-  },
-  textoResultado: {
-    color: '#E2E8F0',
-    fontSize: 14,
-    lineHeight: 22,
+    maxHeight: 360,
   },
   contenedorMarkdown: {
     paddingVertical: 4,
   },
   mdTitulo: {
-    color: '#38BDF8',
-    fontSize: 16,
+    color: theme.colors.foreground,
+    fontSize: 15,
     fontWeight: '700',
     marginTop: 10,
     marginBottom: 6,
+    letterSpacing: -0.2,
   },
   mdParrafo: {
-    color: '#E2E8F0',
-    fontSize: 14,
-    lineHeight: 22,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
+    lineHeight: 20,
     marginBottom: 6,
   },
   mdFilaVineta: {
@@ -510,22 +523,22 @@ const estilos = StyleSheet.create({
     paddingLeft: 4,
   },
   mdBullet: {
-    color: '#818CF8',
-    fontSize: 16,
-    lineHeight: 22,
+    color: theme.colors.ring,
+    fontSize: 14,
+    lineHeight: 20,
     marginRight: 8,
   },
   mdTextoVineta: {
     flex: 1,
-    color: '#E2E8F0',
-    fontSize: 14,
-    lineHeight: 22,
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
+    lineHeight: 20,
   },
   mdNegrita: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontWeight: '700',
   },
   mdNormal: {
-    color: '#CBD5E1',
+    color: theme.colors.mutedForeground,
   },
 });

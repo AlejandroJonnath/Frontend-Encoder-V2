@@ -6,6 +6,8 @@ import {
   PanResponder,
   TouchableOpacity
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { theme } from '../theme/shadcn';
 
 /**
  * Previsualizador interactivo para ubicar la firma o nota sobre la página del documento
@@ -15,7 +17,7 @@ export default function PdfVisualPicker({
   paginaActual = 1,
   alCambiarPagina,
   alCambiarPosicion,
-  tipo = 'firma', // 'firma' o 'nota'
+  tipo = 'firma',
   tituloEtiqueta = 'Firma'
 }) {
   const [posX, setPosX] = useState(60);
@@ -28,7 +30,6 @@ export default function PdfVisualPicker({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (evt, gestureState) => {
-        // Delimitar dentro del contenedor visual de la página
         const nuevaX = Math.max(10, Math.min(gestureState.moveX - 100, 240 - anchoCaja));
         const nuevaY = Math.max(10, Math.min(gestureState.moveY - 260, 340 - altoCaja));
 
@@ -36,12 +37,11 @@ export default function PdfVisualPicker({
         setPosY(nuevaY);
 
         if (alCambiarPosicion) {
-          // Escalar a coordenadas reales de PDF (A4 = 595 x 842 puntos)
           const factorX = 595 / 240;
           const factorY = 842 / 340;
           alCambiarPosicion({
             x: Math.round(nuevaX * factorX),
-            y: Math.round((340 - nuevaY - altoCaja) * factorY), // Sistema cartesiano de PDF
+            y: Math.round((340 - nuevaY - altoCaja) * factorY),
             pagina: paginaActual
           });
         }
@@ -58,32 +58,35 @@ export default function PdfVisualPicker({
             style={[estilos.btnPagina, paginaActual <= 1 && estilos.btnDeshabilitado]}
             disabled={paginaActual <= 1}
             onPress={() => alCambiarPagina && alCambiarPagina(paginaActual - 1)}
+            activeOpacity={0.7}
           >
-            <Text style={estilos.textoBtn}>◀ Anterior</Text>
+            <Feather name="chevron-left" size={13} color={theme.colors.foreground} />
+            <Text style={estilos.textoBtn}>Anterior</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[estilos.btnPagina, paginaActual >= totalPaginas && estilos.btnDeshabilitado]}
             disabled={paginaActual >= totalPaginas}
             onPress={() => alCambiarPagina && alCambiarPagina(paginaActual + 1)}
+            activeOpacity={0.7}
           >
-            <Text style={estilos.textoBtn}>Siguiente ▶</Text>
+            <Text style={estilos.textoBtn}>Siguiente</Text>
+            <Feather name="chevron-right" size={13} color={theme.colors.foreground} />
           </TouchableOpacity>
         </View>
       </View>
 
       <Text style={estilos.instruccion}>
-        🖐️ Arrastra el recuadro para definir la posición exacta en el PDF:
+        Arrastra el recuadro para definir la posición exacta en el documento:
       </Text>
 
-      {/* Hoja de papel simulada (A4 aspect ratio) */}
+      {/* Hoja de papel simulada */}
       <View style={estilos.hojaPdf}>
-        {/* Líneas simuladas de texto del documento */}
         <View style={estilos.lineaSimulada} />
         <View style={[estilos.lineaSimulada, { width: '80%' }]} />
         <View style={[estilos.lineaSimulada, { width: '90%' }]} />
         <View style={[estilos.lineaSimulada, { width: '60%' }]} />
 
-        {/* Elemento arrastrable (Firma o Nota) */}
+        {/* Elemento arrastrable */}
         <View
           {...panResponder.panHandlers}
           style={[
@@ -92,10 +95,15 @@ export default function PdfVisualPicker({
             { left: posX, top: posY, width: anchoCaja, height: altoCaja }
           ]}
         >
-          <Text style={estilos.textoCaja}>
-            {tipo === 'firma' ? '🖋️ ' : '📝 '}
-            {tituloEtiqueta}
-          </Text>
+          <View style={estilos.filaEtiquetaCaja}>
+            <Feather
+              name={tipo === 'firma' ? "shield" : "edit-3"}
+              size={12}
+              color={tipo === 'firma' ? '#0284C7' : '#D97706'}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={estilos.textoCaja}>{tituloEtiqueta}</Text>
+          </View>
           <Text style={estilos.subtextoCaja}>(Arrastra aquí)</Text>
         </View>
       </View>
@@ -113,34 +121,39 @@ const estilos = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: 260,
+    width: 250,
     marginBottom: 8,
   },
   textoInfo: {
-    color: '#CBD5E1',
-    fontSize: 13,
-    fontWeight: 'bold',
+    color: theme.colors.foreground,
+    fontSize: 12,
+    fontWeight: '600',
   },
   filaBotones: {
     flexDirection: 'row',
+    gap: 6,
   },
   btnPagina: {
-    backgroundColor: '#334155',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.secondary,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
-    marginLeft: 6,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 2,
   },
   btnDeshabilitado: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   textoBtn: {
-    color: '#F8FAFC',
+    color: theme.colors.foreground,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   instruccion: {
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
     fontSize: 12,
     marginBottom: 10,
     textAlign: 'center',
@@ -149,17 +162,17 @@ const estilos = StyleSheet.create({
     width: 250,
     height: 350,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#64748B',
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     padding: 16,
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   lineaSimulada: {
     height: 6,
@@ -178,16 +191,20 @@ const estilos = StyleSheet.create({
     padding: 4,
   },
   cajaFirma: {
-    backgroundColor: 'rgba(219, 234, 254, 0.9)',
-    borderColor: '#2563EB',
+    backgroundColor: 'rgba(219, 234, 254, 0.95)',
+    borderColor: '#0284C7',
   },
   cajaNota: {
     backgroundColor: 'rgba(254, 240, 138, 0.95)',
-    borderColor: '#CA8A04',
+    borderColor: '#D97706',
+  },
+  filaEtiquetaCaja: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   textoCaja: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#0F172A',
   },
   subtextoCaja: {

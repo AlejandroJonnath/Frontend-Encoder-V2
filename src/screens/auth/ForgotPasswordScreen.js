@@ -2,17 +2,20 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 
 export default function ForgotPasswordScreen({ onVolverALogin }) {
   const [email, setEmail] = useState('');
@@ -55,48 +58,48 @@ export default function ForgotPasswordScreen({ onVolverALogin }) {
           contentContainerStyle={estilos.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <View style={estilos.tarjeta}>
-            <View style={estilos.logoCaja}>
-              <Text style={estilos.iconoApp}>🔐</Text>
-            </View>
-            <Text style={estilos.titulo}>¿Olvidaste tu contraseña?</Text>
-            <Text style={estilos.subtitulo}>
-              Escribe el correo electrónico con el que te registraste y te enviaremos un enlace seguro para crear una nueva contraseña.
-            </Text>
+          <Card style={estilos.tarjeta}>
+            <CardHeader style={estilos.headerTarjeta}>
+              <View style={estilos.logoCaja}>
+                <Feather name="key" size={24} color={theme.colors.foreground} />
+              </View>
+              <CardTitle style={estilos.titulo}>Recuperar Contraseña</CardTitle>
+              <CardDescription style={estilos.subtitulo}>
+                Ingresa tu correo registrado y te enviaremos las instrucciones de restablecimiento.
+              </CardDescription>
+            </CardHeader>
 
-            <View style={estilos.grupoInput}>
-              <Text style={estilos.etiqueta}>Correo Electrónico Registrado</Text>
-              <TextInput
-                style={estilos.input}
+            <CardContent>
+              <Input
+                label="Correo Electrónico Registrado"
                 placeholder="ejemplo@correo.com"
-                placeholderTextColor="#64748B"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
               />
-            </View>
 
-            <TouchableOpacity
-              style={[estilos.botonPrincipal, enviando && { opacity: 0.7 }]}
-              onPress={manejarRecuperacion}
-              disabled={enviando}
-              activeOpacity={0.8}
-            >
-              {enviando ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={estilos.textoBotonPrincipal}>Enviar Correo de Recuperación</Text>
-              )}
-            </TouchableOpacity>
+              <Button
+                variant="default"
+                size="lg"
+                onPress={manejarRecuperacion}
+                cargando={enviando}
+                disabled={enviando}
+                style={estilos.botonPrincipal}
+              >
+                Enviar Enlace de Recuperación
+              </Button>
 
-            <TouchableOpacity
-              style={estilos.botonVolver}
-              onPress={onVolverALogin}
-            >
-              <Text style={estilos.textoVolver}>← Regresar al Inicio de Sesión</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={estilos.botonVolver}
+                onPress={onVolverALogin}
+                activeOpacity={0.7}
+              >
+                <Feather name="arrow-left" size={14} color={theme.colors.mutedForeground} style={{ marginRight: 6 }} />
+                <Text style={estilos.textoVolver}>Regresar al Inicio de Sesión</Text>
+              </TouchableOpacity>
+            </CardContent>
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -110,93 +113,51 @@ const estilos = StyleSheet.create({
     padding: 20,
   },
   tarjeta: {
-    backgroundColor: '#0F172A',
-    borderRadius: 20,
     padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  headerTarjeta: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 8,
+    marginBottom: 20,
   },
   logoCaja: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    width: 48,
+    height: 48,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.25)',
-  },
-  iconoApp: {
-    fontSize: 30,
+    borderColor: theme.colors.border,
   },
   titulo: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#F8FAFC',
-    marginBottom: 8,
+    fontWeight: '700',
+    color: theme.colors.foreground,
+    letterSpacing: -0.3,
     textAlign: 'center',
   },
   subtitulo: {
     fontSize: 13,
-    color: '#94A3B8',
-    marginBottom: 24,
+    color: theme.colors.mutedForeground,
     textAlign: 'center',
-    lineHeight: 19,
-    paddingHorizontal: 8,
-  },
-  grupoInput: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  etiqueta: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: '#090D16',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: '#F8FAFC',
+    marginTop: 4,
+    lineHeight: 18,
   },
   botonPrincipal: {
     width: '100%',
-    backgroundColor: '#0284C7',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
+    marginTop: 8,
     marginBottom: 16,
-    shadowColor: '#0284C7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  textoBotonPrincipal: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
   },
   botonVolver: {
-    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   textoVolver: {
     fontSize: 13,
-    color: '#38BDF8',
-    fontWeight: '600',
+    color: theme.colors.mutedForeground,
+    fontWeight: '500',
   },
 });

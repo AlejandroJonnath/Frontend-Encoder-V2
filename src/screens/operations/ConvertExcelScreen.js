@@ -11,10 +11,15 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import ExcelSheetSelector from '../../components/ExcelSheetSelector';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
 import { CONFIGURACION } from '../../config/constantes';
+import { theme } from '../../theme/shadcn';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 
 export default function ConvertExcelScreen({ onVolver }) {
   const [archivoExcel, setArchivoExcel] = useState(null);
@@ -46,7 +51,6 @@ export default function ConvertExcelScreen({ onVolver }) {
         setReporteExcel(null);
         setIdTemporalExcel(null);
 
-        // Inspeccionar de inmediato las hojas en segundo plano
         inspeccionarHojas(doc);
       }
     } catch (err) {
@@ -58,7 +62,6 @@ export default function ConvertExcelScreen({ onVolver }) {
     try {
       setCargandoInspeccion(true);
 
-      // Subida nativa sin JS FormData
       const data = await procesarOperacionNativa({
         endpoint: '/excel/inspeccionar',
         archivoUri: doc.uri,
@@ -136,7 +139,7 @@ export default function ConvertExcelScreen({ onVolver }) {
     <ScreenContainer
       titulo="Excel a PDF"
       subtitulo="Previsualiza y selecciona hojas específicas"
-      iconoTitulo="📊"
+      iconoTitulo={<Feather name="grid" size={17} color={theme.colors.foreground} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -144,43 +147,50 @@ export default function ConvertExcelScreen({ onVolver }) {
         contentContainerStyle={estilos.scrollContenido}
         showsVerticalScrollIndicator={false}
       >
-        {/* Banner Informativo */}
-        <View style={estilos.bannerInfo}>
-          <Text style={estilos.tituloBanner}>📗 Formatos admitidos: Excel (.xlsx, .xls)</Text>
-          <Text style={estilos.textoBanner}>
-            Puedes previsualizar el contenido y las columnas de cada hoja para seleccionar únicamente las tablas que deseas exportar a PDF.
+        <View style={estilos.bannerGuia}>
+          <View style={estilos.bannerHeader}>
+            <Badge variant="secondary">FILTRO EXCLUSIVO EXCEL</Badge>
+          </View>
+          <Text style={estilos.tituloGuia}>Hojas de Cálculo (.xlsx, .xls)</Text>
+          <Text style={estilos.textoGuia}>
+            Inspecciona las columnas y filas de cada hoja para seleccionar únicamente los datos que requieres exportar a PDF.
           </Text>
         </View>
 
-        {/* Selector de Archivo */}
-        <View style={estilos.card}>
-          <Text style={estilos.tituloCard}>Selecciona tu Libro de Excel</Text>
-          <Text style={estilos.subtituloCard}>Únicamente archivos .xlsx o .xls</Text>
+        <Card style={estilos.card}>
+          <CardHeader>
+            <CardTitle>Libro de Excel</CardTitle>
+            <CardDescription>Formatos compatibles: .xlsx y .xls</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TouchableOpacity style={estilos.dropzone} onPress={seleccionarExcel} activeOpacity={0.7}>
+              <View style={estilos.iconoDropzone}>
+                <Feather
+                  name={archivoExcel ? "grid" : "upload-cloud"}
+                  size={20}
+                  color={archivoExcel ? theme.colors.foreground : theme.colors.mutedForeground}
+                />
+              </View>
+              <View style={estilos.infoDropzone}>
+                <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>
+                  {archivoExcel ? archivoExcel.name : 'Seleccionar Archivo Excel'}
+                </Text>
+                <Text style={estilos.textoSecundarioDropzone}>
+                  {archivoExcel
+                    ? `${(archivoExcel.size / (1024 * 1024)).toFixed(2)} MB • ${
+                        reporteExcel ? `${reporteExcel.totalHojas} hojas detectadas` : 'Cargando hojas...'
+                      }`
+                    : 'Toca para examinar tu almacenamiento'}
+                </Text>
+              </View>
+              {archivoExcel && <Badge variant="success">Listo</Badge>}
+            </TouchableOpacity>
+          </CardContent>
+        </Card>
 
-          <TouchableOpacity style={estilos.btnPicker} onPress={seleccionarExcel} activeOpacity={0.7}>
-            <View style={estilos.iconoCirculo}>
-              <Text style={estilos.iconoDoc}>{archivoExcel ? '📊' : '📁'}</Text>
-            </View>
-            <View style={estilos.infoDoc}>
-              <Text style={estilos.nombreDoc} numberOfLines={1}>
-                {archivoExcel ? archivoExcel.name : 'Toca para elegir archivo Excel'}
-              </Text>
-              <Text style={estilos.detalleDoc}>
-                {archivoExcel
-                  ? `${(archivoExcel.size / (1024 * 1024)).toFixed(2)} MB • ${
-                      reporteExcel ? `${reporteExcel.totalHojas} hojas detectadas` : 'Cargando hojas...'
-                    }`
-                  : 'Filtro exclusivo: .xlsx o .xls'}
-              </Text>
-            </View>
-            {archivoExcel && <Text style={estilos.checkVerde}>✓</Text>}
-          </TouchableOpacity>
-        </View>
-
-        {/* Resumen de Hojas si ya fue inspeccionado */}
         {cargandoInspeccion && (
           <View style={estilos.cardCargando}>
-            <ActivityIndicator color="#10B981" size="small" />
+            <ActivityIndicator color={theme.colors.foreground} size="small" />
             <Text style={estilos.textoCargandoInspeccion}>
               Analizando hojas y filas de datos...
             </Text>
@@ -188,52 +198,48 @@ export default function ConvertExcelScreen({ onVolver }) {
         )}
 
         {reporteExcel && !cargandoInspeccion && (
-          <View style={estilos.cardReporte}>
-            <View style={estilos.headerReporte}>
-              <Text style={estilos.tituloReporte}>Hojas del Documento ({reporteExcel.totalHojas})</Text>
-              <TouchableOpacity
-                style={estilos.btnVerHojas}
-                onPress={() => setModalHojasVisible(true)}
-              >
-                <Text style={estilos.textoBtnVerHojas}>Ver / Filtrar Hojas ⚙️</Text>
-              </TouchableOpacity>
-            </View>
-
-            {reporteExcel.hojas?.slice(0, 4).map((h, i) => (
-              <View key={i} style={estilos.filaHojaItem}>
-                <Text style={estilos.nombreHojaItem}>📑 {h.nombre}</Text>
-                <Text style={estilos.metaHojaItem}>{h.filasTotales} filas • {h.columnasTotales} cols</Text>
+          <Card style={estilos.cardReporte}>
+            <CardHeader style={estilos.headerReporte}>
+              <View style={{ flex: 1 }}>
+                <CardTitle style={{ fontSize: 14 }}>Hojas Detectadas ({reporteExcel.totalHojas})</CardTitle>
+                <CardDescription>Resumen de estructura del libro</CardDescription>
               </View>
-            ))}
-          </View>
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={() => setModalHojasVisible(true)}
+                icon={<Feather name="sliders" size={13} color={theme.colors.foreground} />}
+              >
+                Filtrar
+              </Button>
+            </CardHeader>
+
+            <CardContent>
+              {reporteExcel.hojas?.slice(0, 4).map((h, i) => (
+                <View key={i} style={estilos.filaHojaItem}>
+                  <Text style={estilos.nombreHojaItem} numberOfLines={1}>{h.nombre}</Text>
+                  <Text style={estilos.metaHojaItem}>{h.filasTotales} filas • {h.columnasTotales} cols</Text>
+                </View>
+              ))}
+            </CardContent>
+          </Card>
         )}
 
-        {/* Botón de Conversión */}
-        <TouchableOpacity
-          style={[
-            estilos.btnConvertir,
-            (convirtiendo || cargandoInspeccion || !archivoExcel || !reporteExcel) && { opacity: 0.6 }
-          ]}
+        <Button
+          variant="default"
+          size="lg"
           onPress={() => setModalHojasVisible(true)}
           disabled={convirtiendo || cargandoInspeccion || !archivoExcel || !reporteExcel}
-          activeOpacity={0.8}
+          cargando={convirtiendo}
+          icon={!convirtiendo && <Feather name="arrow-right-circle" size={16} color={theme.colors.primaryForeground} />}
+          style={estilos.btnConvertir}
         >
-          {convirtiendo ? (
-            <View style={estilos.filaCargando}>
-              <ActivityIndicator color="#FFFFFF" size="small" />
-              <Text style={estilos.textoCargando}>Generando PDF formateado...</Text>
-            </View>
-          ) : (
-            <Text style={estilos.textoBtnConvertir}>
-              {reporteExcel ? 'Seleccionar Hojas y Convertir a PDF' : 'Selecciona un archivo Excel'}
-            </Text>
-          )}
-        </TouchableOpacity>
+          {reporteExcel ? 'Seleccionar Hojas y Convertir' : 'Selecciona un archivo Excel'}
+        </Button>
 
-        <View style={{ height: 30 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* Modal Interactivo de Selección de Hojas */}
       {modalHojasVisible && (
         <ExcelSheetSelector
           visible={modalHojasVisible}
@@ -251,172 +257,109 @@ const estilos = StyleSheet.create({
     flex: 1,
   },
   scrollContenido: {
-    padding: 18,
+    padding: 16,
   },
-  bannerInfo: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderRadius: 14,
+  bannerGuia: {
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    marginBottom: 18,
+    borderColor: theme.colors.border,
+    marginBottom: 16,
   },
-  tituloBanner: {
-    color: '#34D399',
-    fontSize: 13,
-    fontWeight: 'bold',
+  bannerHeader: {
+    marginBottom: 8,
+  },
+  tituloGuia: {
+    color: theme.colors.foreground,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
     marginBottom: 4,
   },
-  textoBanner: {
-    color: '#94A3B8',
-    fontSize: 12,
+  textoGuia: {
+    color: theme.colors.mutedForeground,
+    fontSize: 13,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 16,
   },
-  tituloCard: {
-    color: '#F8FAFC',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subtituloCard: {
-    color: '#64748B',
-    fontSize: 12,
-    marginBottom: 14,
-  },
-  btnPicker: {
+  dropzone: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     padding: 14,
-    borderWidth: 1.5,
-    borderColor: '#334155',
   },
-  iconoCirculo: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  iconoDropzone: {
+    width: 38,
+    height: 38,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  iconoDoc: {
-    fontSize: 22,
-  },
-  infoDoc: {
+  infoDropzone: {
     flex: 1,
+    marginRight: 8,
   },
-  nombreDoc: {
-    color: '#F8FAFC',
+  textoPrincipalDropzone: {
+    color: theme.colors.foreground,
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '500',
   },
-  detalleDoc: {
-    color: '#94A3B8',
-    fontSize: 11,
-  },
-  checkVerde: {
-    color: '#10B981',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
+  textoSecundarioDropzone: {
+    color: theme.colors.mutedForeground,
+    fontSize: 12,
+    marginTop: 2,
   },
   cardCargando: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.md,
     padding: 14,
     gap: 10,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: theme.colors.border,
   },
   textoCargandoInspeccion: {
-    color: '#94A3B8',
+    color: theme.colors.mutedForeground,
     fontSize: 13,
   },
   cardReporte: {
-    backgroundColor: '#0F172A',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   headerReporte: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  tituloReporte: {
-    color: '#F8FAFC',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  btnVerHojas: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  textoBtnVerHojas: {
-    color: '#34D399',
-    fontSize: 11,
-    fontWeight: 'bold',
   },
   filaHojaItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#1E293B',
+    alignItems: 'center',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   nombreHojaItem: {
-    color: '#E2E8F0',
+    color: theme.colors.foreground,
     fontSize: 13,
     fontWeight: '500',
+    flex: 1,
+    marginRight: 12,
   },
   metaHojaItem: {
-    color: '#64748B',
+    color: theme.colors.mutedForeground,
     fontSize: 11,
   },
   btnConvertir: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#059669',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  textoBtnConvertir: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  filaCargando: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  textoCargando: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    width: '100%',
   },
 });
