@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import ExcelSheetSelector from '../../components/ExcelSheetSelector';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
@@ -20,8 +20,12 @@ import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
+
+const EXCEL_COLOR = '#34D399';
 
 export default function ConvertExcelScreen({ onVolver }) {
+  const { mostrarErrorFormatoInvalido, mostrarErrorOperacion } = useAlerta();
   const [archivoExcel, setArchivoExcel] = useState(null);
   const [reporteExcel, setReporteExcel] = useState(null);
   const [idTemporalExcel, setIdTemporalExcel] = useState(null);
@@ -43,7 +47,7 @@ export default function ConvertExcelScreen({ onVolver }) {
         const doc = res.assets[0];
         const nombreMin = doc.name.toLowerCase();
         if (!nombreMin.endsWith('.xlsx') && !nombreMin.endsWith('.xls')) {
-          Alert.alert('Archivo no válido', 'Solo se permiten hojas de cálculo de Excel (.xlsx o .xls).');
+          mostrarErrorFormatoInvalido('.xlsx o .xls');
           return;
         }
 
@@ -54,7 +58,7 @@ export default function ConvertExcelScreen({ onVolver }) {
         inspeccionarHojas(doc);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo Excel.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el archivo Excel.');
     }
   };
 
@@ -76,7 +80,7 @@ export default function ConvertExcelScreen({ onVolver }) {
         throw new Error(data.mensaje || 'Error al inspeccionar las hojas del libro Excel.');
       }
     } catch (err) {
-      Alert.alert('Aviso', `No se pudo leer la estructura previa del Excel: ${err.message}`);
+      mostrarErrorOperacion('Aviso', `No se pudo leer la estructura previa del Excel: ${err.message}`);
     } finally {
       setCargandoInspeccion(false);
     }
@@ -86,7 +90,7 @@ export default function ConvertExcelScreen({ onVolver }) {
     setModalHojasVisible(false);
 
     if (!idTemporalExcel) {
-      Alert.alert('Error', 'Falta el identificador del archivo Excel. Vuelve a seleccionarlo.');
+      mostrarErrorOperacion('Error de sesión', 'Falta el identificador del archivo Excel. Vuelve a seleccionarlo.');
       return;
     }
 
@@ -124,12 +128,10 @@ export default function ConvertExcelScreen({ onVolver }) {
           mimeType: 'application/pdf',
           UTI: 'com.adobe.pdf'
         });
-      } else {
-        Alert.alert('Conversión Exitosa', `Archivo guardado como ${nombreSalida}`);
       }
 
     } catch (err) {
-      Alert.alert('Error en Conversión', err.message);
+      mostrarErrorOperacion('Error en Conversión', err.message);
     } finally {
       setConvirtiendo(false);
     }
@@ -139,7 +141,7 @@ export default function ConvertExcelScreen({ onVolver }) {
     <ScreenContainer
       titulo="Excel a PDF"
       subtitulo="Previsualiza y selecciona hojas específicas"
-      iconoTitulo={<Feather name="grid" size={17} color={theme.colors.foreground} />}
+      iconoTitulo={<MaterialCommunityIcons name="microsoft-excel" size={19} color={EXCEL_COLOR} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -164,12 +166,10 @@ export default function ConvertExcelScreen({ onVolver }) {
           </CardHeader>
           <CardContent>
             <TouchableOpacity style={estilos.dropzone} onPress={seleccionarExcel} activeOpacity={0.7}>
-              <View style={estilos.iconoDropzone}>
-                <Feather
-                  name={archivoExcel ? "grid" : "upload-cloud"}
-                  size={20}
-                  color={archivoExcel ? theme.colors.foreground : theme.colors.mutedForeground}
-                />
+              <View style={[estilos.iconoDropzone, archivoExcel && { backgroundColor: 'rgba(52,211,153,0.1)', borderColor: 'rgba(52,211,153,0.25)' }]}>
+                {archivoExcel
+                  ? <MaterialCommunityIcons name="microsoft-excel" size={22} color={EXCEL_COLOR} />
+                  : <Feather name="upload-cloud" size={20} color={theme.colors.mutedForeground} />}
               </View>
               <View style={estilos.infoDropzone}>
                 <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>

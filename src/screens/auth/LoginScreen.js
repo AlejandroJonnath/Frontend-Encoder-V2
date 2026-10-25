@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { useAlerta } from '../../context/AlertContext';
 import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -22,10 +23,11 @@ export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena })
   const [password, setPassword] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
   const { iniciarSesion } = useAuth();
+  const { mostrarErrorCampos, mostrarErrorContrasena } = useAlerta();
 
   const manejarLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Campos requeridos', 'Por favor ingresa tu correo y contraseña.');
+      mostrarErrorCampos('Por favor ingresa tu correo electrónico y contraseña.');
       return;
     }
 
@@ -33,7 +35,10 @@ export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena })
       setBloqueado(true);
       await iniciarSesion(email, password);
     } catch (err) {
-      Alert.alert('Error al iniciar sesión', err.message || 'Verifica tus credenciales.');
+      mostrarErrorContrasena(
+        err.message || 'Verifica tus credenciales de acceso.',
+        onIrAOlvidasteContrasena
+      );
     } finally {
       setBloqueado(false);
     }

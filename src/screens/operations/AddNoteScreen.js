@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Alert,
   ScrollView,
   Modal,
   SafeAreaView
@@ -19,8 +18,10 @@ import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
 
 export default function AddNoteScreen({ onVolver }) {
+  const { mostrarErrorFaltaArchivo, mostrarErrorCampos, mostrarErrorOperacion } = useAlerta();
   const [archivoPdf, setArchivoPdf] = useState(null);
   const [textoNota, setTextoNota] = useState('');
   const [posicionNota, setPosicionNota] = useState({ x: 100, y: 100, pagina: 1 });
@@ -37,17 +38,17 @@ export default function AddNoteScreen({ onVolver }) {
         setArchivoPdf(res.assets[0]);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el archivo.');
     }
   };
 
   const ejecutarAgregarNota = async () => {
     if (!archivoPdf) {
-      Alert.alert('Documento requerido', 'Selecciona el PDF donde deseas agregar la nota.');
+      mostrarErrorFaltaArchivo('PDF');
       return;
     }
     if (!textoNota.trim()) {
-      Alert.alert('Texto requerido', 'Escribe el contenido de la nota adhesiva.');
+      mostrarErrorCampos('Escribe el contenido de la nota adhesiva antes de continuar.');
       return;
     }
 
@@ -70,7 +71,7 @@ export default function AddNoteScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error al agregar nota', err.message);
+      mostrarErrorOperacion('Error al agregar nota', err.message);
     } finally {
       setProcesando(false);
     }

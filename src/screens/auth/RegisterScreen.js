@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { useAlerta } from '../../context/AlertContext';
 import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -26,20 +27,27 @@ export default function RegisterScreen({ onIrALogin }) {
   const [bloqueado, setBloqueado] = useState(false);
 
   const { registrarUsuario } = useAuth();
+  const {
+    mostrarErrorCampos,
+    mostrarErrorContrasenaDebil,
+    mostrarErrorContrasenasNoCoinciden,
+    mostrarErrorOperacion,
+    mostrarExito
+  } = useAlerta();
 
   const manejarRegistro = async () => {
     if (!nombre || !apellido || !username || !email || !password) {
-      Alert.alert('Campos incompletos', 'Por favor completa todos los campos del formulario.');
+      mostrarErrorCampos('Por favor completa todos los campos del formulario.');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Contraseña débil', 'La contraseña debe tener mínimo 6 caracteres.');
+      mostrarErrorContrasenaDebil();
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Contraseñas no coinciden', 'Asegúrate de que ambas contraseñas sean idénticas.');
+      mostrarErrorContrasenasNoCoinciden();
       return;
     }
 
@@ -53,13 +61,13 @@ export default function RegisterScreen({ onIrALogin }) {
         password
       });
 
-      Alert.alert(
+      mostrarExito(
         '¡Registro Exitoso!',
         'Tu cuenta ha sido creada. Si Supabase requiere confirmación por correo, revisa tu bandeja de entrada antes de iniciar sesión.',
-        [{ text: 'Iniciar Sesión', onPress: onIrALogin }]
+        onIrALogin
       );
     } catch (err) {
-      Alert.alert('Error al registrar', err.message || 'No se pudo completar el registro.');
+      mostrarErrorOperacion('Error al registrar', err.message || 'No se pudo completar el registro.');
     } finally {
       setBloqueado(false);
     }

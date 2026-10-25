@@ -4,19 +4,23 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
 import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
+
+const TXT_COLOR = '#CBD5E1';
 
 export default function ConvertTxtScreen({ onVolver }) {
+  const { mostrarErrorFormatoInvalido, mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
   const [archivoTxt, setArchivoTxt] = useState(null);
   const [convirtiendo, setConvirtiendo] = useState(false);
 
@@ -31,19 +35,19 @@ export default function ConvertTxtScreen({ onVolver }) {
         const doc = res.assets[0];
         const nombreMin = doc.name.toLowerCase();
         if (!nombreMin.endsWith('.txt')) {
-          Alert.alert('Archivo no válido', 'Solo se permiten archivos de texto plano (.txt).');
+          mostrarErrorFormatoInvalido('.txt');
           return;
         }
         setArchivoTxt(doc);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo de texto.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el archivo de texto.');
     }
   };
 
   const ejecutarConversion = async () => {
     if (!archivoTxt) {
-      Alert.alert('Selecciona un archivo', 'Elige un archivo de texto plano (.txt) para convertir.');
+      mostrarErrorFaltaArchivo('TXT');
       return;
     }
 
@@ -62,7 +66,7 @@ export default function ConvertTxtScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error en Conversión', err.message || 'No se pudo convertir el archivo .txt a PDF.');
+      mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir el archivo .txt a PDF.');
     } finally {
       setConvirtiendo(false);
     }
@@ -72,7 +76,7 @@ export default function ConvertTxtScreen({ onVolver }) {
     <ScreenContainer
       titulo="Bloc de notas a PDF"
       subtitulo="Conversión limpia de archivos de texto (.txt)"
-      iconoTitulo={<Feather name="align-left" size={17} color={theme.colors.foreground} />}
+      iconoTitulo={<MaterialCommunityIcons name="file-document-outline" size={19} color={TXT_COLOR} />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -97,12 +101,10 @@ export default function ConvertTxtScreen({ onVolver }) {
           </CardHeader>
           <CardContent>
             <TouchableOpacity style={estilos.dropzone} onPress={seleccionarTxt} activeOpacity={0.7}>
-              <View style={estilos.iconoDropzone}>
-                <Feather
-                  name={archivoTxt ? "align-left" : "upload-cloud"}
-                  size={20}
-                  color={archivoTxt ? theme.colors.foreground : theme.colors.mutedForeground}
-                />
+              <View style={[estilos.iconoDropzone, archivoTxt && { backgroundColor: 'rgba(203,213,225,0.1)', borderColor: 'rgba(203,213,225,0.25)' }]}>
+                {archivoTxt
+                  ? <MaterialCommunityIcons name="file-document-outline" size={22} color={TXT_COLOR} />
+                  : <Feather name="upload-cloud" size={20} color={theme.colors.mutedForeground} />}
               </View>
               <View style={estilos.infoDropzone}>
                 <Text style={estilos.textoPrincipalDropzone} numberOfLines={1}>

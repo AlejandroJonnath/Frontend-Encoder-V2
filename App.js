@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { AlertProvider } from './src/context/AlertContext';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
@@ -84,10 +85,12 @@ function NavegadorPrincipal() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#09090B" />
-        <NavegadorPrincipal />
-      </AuthProvider>
+      <AlertProvider>
+        <AuthProvider>
+          <StatusBar barStyle="light-content" backgroundColor="#09090B" />
+          <NavegadorPrincipal />
+        </AuthProvider>
+      </AlertProvider>
     </SafeAreaProvider>
   );
 }

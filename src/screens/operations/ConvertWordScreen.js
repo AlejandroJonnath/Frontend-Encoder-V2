@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../utils/apiUploader';
+import { useAlerta } from '../../context/AlertContext';
 import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -19,6 +19,7 @@ import { Button } from '../../components/ui/Button';
 export default function ConvertWordScreen({ onVolver }) {
   const [archivoWord, setArchivoWord] = useState(null);
   const [convirtiendo, setConvirtiendo] = useState(false);
+  const { mostrarErrorFormatoInvalido, mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
 
   const seleccionarWord = async () => {
     try {
@@ -34,19 +35,19 @@ export default function ConvertWordScreen({ onVolver }) {
         const doc = res.assets[0];
         const nombreMin = doc.name.toLowerCase();
         if (!nombreMin.endsWith('.docx') && !nombreMin.endsWith('.doc')) {
-          Alert.alert('Archivo no válido', 'Solo se permiten documentos de Word (.docx o .doc).');
+          mostrarErrorFormatoInvalido('.docx o .doc de Microsoft Word');
           return;
         }
         setArchivoWord(doc);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el documento de Word.');
+      mostrarErrorOperacion('Error al seleccionar archivo', 'No se pudo cargar el documento de Word.');
     }
   };
 
   const ejecutarConversion = async () => {
     if (!archivoWord) {
-      Alert.alert('Selecciona un archivo', 'Elige un documento Word (.docx o .doc) para convertir.');
+      mostrarErrorFaltaArchivo('Word (.docx o .doc)');
       return;
     }
 
@@ -65,7 +66,7 @@ export default function ConvertWordScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error en Conversión', err.message || 'No se pudo convertir el archivo Word a PDF.');
+      mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir el archivo Word a PDF.');
     } finally {
       setConvirtiendo(false);
     }
@@ -75,7 +76,7 @@ export default function ConvertWordScreen({ onVolver }) {
     <ScreenContainer
       titulo="Word a PDF"
       subtitulo="Conversión de documentos .docx y .doc"
-      iconoTitulo={<Feather name="file-text" size={17} color={theme.colors.foreground} />}
+      iconoTitulo={<MaterialCommunityIcons name="microsoft-word" size={19} color="#60A5FA" />}
       onVolver={onVolver}
     >
       <ScrollView
@@ -100,11 +101,11 @@ export default function ConvertWordScreen({ onVolver }) {
           </CardHeader>
           <CardContent>
             <TouchableOpacity style={estilos.dropzone} onPress={seleccionarWord} activeOpacity={0.7}>
-              <View style={estilos.iconoDropzone}>
-                <Feather
-                  name={archivoWord ? "file-text" : "upload-cloud"}
-                  size={20}
-                  color={archivoWord ? theme.colors.foreground : theme.colors.mutedForeground}
+              <View style={[estilos.iconoDropzone, archivoWord && estilos.iconoDropzoneActivo]}>
+                <MaterialCommunityIcons
+                  name="microsoft-word"
+                  size={24}
+                  color={archivoWord ? '#60A5FA' : theme.colors.mutedForeground}
                 />
               </View>
               <View style={estilos.infoDropzone}>
@@ -183,13 +184,19 @@ const estilos = StyleSheet.create({
     padding: 14,
   },
   iconoDropzone: {
-    width: 38,
-    height: 38,
+    width: 42,
+    height: 42,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.secondary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+  },
+  iconoDropzoneActivo: {
+    backgroundColor: 'rgba(37, 99, 235, 0.14)',
+    borderColor: 'rgba(37, 99, 235, 0.3)',
   },
   infoDropzone: {
     flex: 1,

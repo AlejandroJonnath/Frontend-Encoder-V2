@@ -12,6 +12,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
+import { useAlerta } from '../../context/AlertContext';
 import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -22,23 +23,24 @@ export default function ForgotPasswordScreen({ onVolverALogin }) {
   const [enviando, setEnviando] = useState(false);
 
   const { recuperarContrasena } = useAuth();
+  const { mostrarErrorCampos, mostrarErrorOperacion, mostrarExito } = useAlerta();
 
   const manejarRecuperacion = async () => {
     if (!email) {
-      Alert.alert('Correo requerido', 'Ingresa la dirección de correo asociada a tu cuenta.');
+      mostrarErrorCampos('Ingresa la dirección de correo asociada a tu cuenta para restablecer la clave.');
       return;
     }
 
     try {
       setEnviando(true);
       await recuperarContrasena(email);
-      Alert.alert(
+      mostrarExito(
         'Enlace Enviado',
         'Hemos enviado un correo electrónico con las instrucciones para restablecer tu contraseña. Revisa también tu carpeta de spam.',
-        [{ text: 'Entendido', onPress: onVolverALogin }]
+        onVolverALogin
       );
     } catch (err) {
-      Alert.alert('Error', err.message || 'No se pudo enviar el correo de recuperación.');
+      mostrarErrorOperacion('Error al enviar correo', err.message || 'No se pudo enviar el correo de recuperación.');
     } finally {
       setEnviando(false);
     }

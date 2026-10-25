@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -16,6 +15,7 @@ import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
 
 function RenderizadorTextoIa({ texto }) {
   if (!texto) return null;
@@ -76,6 +76,7 @@ function RenderizadorTextoIa({ texto }) {
 }
 
 export default function GroqAiScreen({ onVolver }) {
+  const { mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
   const [pestanaActiva, setPestanaActiva] = useState('resumen');
   const [archivoPdf, setArchivoPdf] = useState(null);
   const [idiomaOrigen, setIdiomaOrigen] = useState('Detección automática');
@@ -100,13 +101,13 @@ export default function GroqAiScreen({ onVolver }) {
         setResultado(null);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el PDF.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el PDF.');
     }
   };
 
   const ejecutarResumen = async () => {
     if (!archivoPdf) {
-      Alert.alert('Falta el PDF', 'Selecciona el documento que deseas resumir.');
+      mostrarErrorFaltaArchivo('PDF');
       return;
     }
 
@@ -126,7 +127,7 @@ export default function GroqAiScreen({ onVolver }) {
         throw new Error(data.mensaje || 'Error al generar el resumen con Groq AI.');
       }
     } catch (err) {
-      Alert.alert('Error en IA', err.message);
+      mostrarErrorOperacion('Error en IA', err.message);
     } finally {
       setProcesando(false);
     }
@@ -134,7 +135,7 @@ export default function GroqAiScreen({ onVolver }) {
 
   const ejecutarTraduccion = async () => {
     if (!archivoPdf) {
-      Alert.alert('Falta el PDF', 'Selecciona el documento que deseas traducir.');
+      mostrarErrorFaltaArchivo('PDF');
       return;
     }
 
@@ -158,7 +159,7 @@ export default function GroqAiScreen({ onVolver }) {
         throw new Error(data.mensaje || 'Error al traducir con Groq AI.');
       }
     } catch (err) {
-      Alert.alert('Error en Traducción', err.message);
+      mostrarErrorOperacion('Error en Traducción', err.message);
     } finally {
       setProcesando(false);
     }

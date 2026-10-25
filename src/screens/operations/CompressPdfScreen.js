@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -15,8 +14,10 @@ import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
 
 export default function CompressPdfScreen({ onVolver }) {
+  const { mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
   const [archivoPdf, setArchivoPdf] = useState(null);
   const [comprimiendo, setComprimiendo] = useState(false);
   const [resultado, setResultado] = useState(null);
@@ -40,13 +41,13 @@ export default function CompressPdfScreen({ onVolver }) {
         setResultado(null);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el archivo.');
     }
   };
 
   const ejecutarCompresion = async () => {
     if (!archivoPdf) {
-      Alert.alert('Selecciona un archivo', 'Elige un PDF para comenzar la compresión.');
+      mostrarErrorFaltaArchivo('PDF');
       return;
     }
 
@@ -73,7 +74,7 @@ export default function CompressPdfScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error en Compresión', err.message);
+      mostrarErrorOperacion('Error en Compresión', err.message);
     } finally {
       setComprimiendo(false);
     }

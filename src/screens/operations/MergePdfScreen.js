@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -19,8 +18,10 @@ import { theme } from '../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { useAlerta } from '../../context/AlertContext';
 
 export default function MergePdfScreen({ onVolver }) {
+  const { mostrarErrorFaltaArchivo, mostrarErrorCampos, mostrarErrorOperacion } = useAlerta();
   const [archivosPdf, setArchivosPdf] = useState([]);
   const [uniendo, setUniendo] = useState(false);
   const [progresoTexto, setProgresoTexto] = useState('');
@@ -37,7 +38,7 @@ export default function MergePdfScreen({ onVolver }) {
         setArchivosPdf(prev => [...prev, ...res.assets]);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudieron seleccionar los archivos.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudieron seleccionar los archivos.');
     }
   };
 
@@ -65,7 +66,7 @@ export default function MergePdfScreen({ onVolver }) {
 
   const ejecutarUnion = async () => {
     if (archivosPdf.length < 2) {
-      Alert.alert('Mínimo 2 archivos', 'Agrega al menos dos archivos PDF para unirlos.');
+      mostrarErrorCampos('Agrega al menos dos archivos PDF para poder unirlos en un solo documento.');
       return;
     }
 
@@ -115,7 +116,7 @@ export default function MergePdfScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error al unir', err.message);
+      mostrarErrorOperacion('Error al unir', err.message);
     } finally {
       setUniendo(false);
       setProgresoTexto('');

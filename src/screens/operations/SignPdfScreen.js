@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ScrollView,
   Modal,
   SafeAreaView
@@ -19,8 +18,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useAlerta } from '../../context/AlertContext';
 
 export default function SignPdfScreen({ onVolver }) {
+  const { mostrarErrorFaltaArchivo, mostrarErrorCampos, mostrarErrorFormatoInvalido, mostrarErrorOperacion } = useAlerta();
   const [archivoPdf, setArchivoPdf] = useState(null);
   const [archivoP12, setArchivoP12] = useState(null);
   const [contrasenaP12, setContrasenaP12] = useState('');
@@ -38,7 +39,7 @@ export default function SignPdfScreen({ onVolver }) {
         setArchivoPdf(res.assets[0]);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el PDF.');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el PDF.');
     }
   };
 
@@ -51,27 +52,27 @@ export default function SignPdfScreen({ onVolver }) {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const doc = res.assets[0];
         if (!doc.name.toLowerCase().endsWith('.p12') && !doc.name.toLowerCase().endsWith('.pfx')) {
-          Alert.alert('Archivo no válido', 'Debes seleccionar un archivo con extensión .p12 o .pfx');
+          mostrarErrorFormatoInvalido('.p12 o .pfx');
           return;
         }
         setArchivoP12(doc);
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo .p12');
+      mostrarErrorOperacion('Error de acceso', 'No se pudo seleccionar el archivo .p12');
     }
   };
 
   const ejecutarFirma = async () => {
     if (!archivoPdf) {
-      Alert.alert('Falta el PDF', 'Selecciona el documento que deseas firmar.');
+      mostrarErrorFaltaArchivo('PDF');
       return;
     }
     if (!archivoP12) {
-      Alert.alert('Falta el certificado', 'Carga tu archivo de firma electrónica .p12 o .pfx.');
+      mostrarErrorFaltaArchivo('.p12 o .pfx');
       return;
     }
     if (!contrasenaP12.trim()) {
-      Alert.alert('Contraseña requerida', 'Ingresa la contraseña de tu archivo .p12.');
+      mostrarErrorCampos('Ingresa la contraseña de tu archivo .p12 para continuar.');
       return;
     }
 
@@ -107,7 +108,7 @@ export default function SignPdfScreen({ onVolver }) {
       });
 
     } catch (err) {
-      Alert.alert('Error en Firma', err.message || 'Verifica la contraseña del certificado .p12.');
+      mostrarErrorOperacion('Error en Firma', err.message || 'Verifica la contraseña del certificado .p12.');
     } finally {
       setFirmando(false);
     }

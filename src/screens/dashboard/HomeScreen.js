@@ -7,12 +7,31 @@ import {
   StyleSheet,
   Image
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenContainer from '../../components/ScreenContainer';
 import { useAuth } from '../../context/AuthContext';
 import { theme } from '../../theme/shadcn';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+
+function IconoHerramienta({ item, tamano = 20 }) {
+  if (item.familiaIcono === 'mci') {
+    return (
+      <MaterialCommunityIcons
+        name={item.icono}
+        size={tamano}
+        color={item.colorIcono || theme.colors.foreground}
+      />
+    );
+  }
+  return (
+    <Feather
+      name={item.icono}
+      size={tamano}
+      color={item.colorIcono || theme.colors.foreground}
+    />
+  );
+}
 
 export default function HomeScreen({ onNavegar }) {
   const { usuario, perfil, cerrarSesion } = useAuth();
@@ -27,6 +46,9 @@ export default function HomeScreen({ onNavegar }) {
           id: 'firmar',
           titulo: 'Firmar con .p12 (FirmaEC)',
           icono: 'shield',
+          colorIcono: '#38BDF8',
+          fondoIcono: 'rgba(56, 189, 248, 0.12)',
+          bordeIcono: 'rgba(56, 189, 248, 0.25)',
           etiqueta: 'PAdES Ecuador',
           varianteBadge: 'accent',
           fullWidth: true
@@ -39,36 +61,56 @@ export default function HomeScreen({ onNavegar }) {
         {
           id: 'convert_word',
           titulo: 'Word a PDF',
-          icono: 'file-text',
-          etiqueta: 'DOCX / DOC',
+          icono: 'microsoft-word',
+          familiaIcono: 'mci',
+          colorIcono: '#60A5FA',
+          fondoIcono: 'rgba(37, 99, 235, 0.14)',
+          bordeIcono: 'rgba(37, 99, 235, 0.3)',
+          etiqueta: 'Word',
           varianteBadge: 'secondary',
         },
         {
           id: 'convert_excel',
           titulo: 'Excel a PDF',
-          icono: 'grid',
-          etiqueta: 'XLSX / XLS',
+          icono: 'microsoft-excel',
+          familiaIcono: 'mci',
+          colorIcono: '#34D399',
+          fondoIcono: 'rgba(16, 185, 129, 0.14)',
+          bordeIcono: 'rgba(16, 185, 129, 0.3)',
+          etiqueta: 'Excel',
           varianteBadge: 'secondary',
         },
         {
           id: 'convert_ppt',
           titulo: 'PowerPoint a PDF',
-          icono: 'monitor',
-          etiqueta: 'PPTX / PPT',
+          icono: 'microsoft-powerpoint',
+          familiaIcono: 'mci',
+          colorIcono: '#FB923C',
+          fondoIcono: 'rgba(234, 88, 12, 0.14)',
+          bordeIcono: 'rgba(234, 88, 12, 0.3)',
+          etiqueta: 'PowerPoint',
           varianteBadge: 'secondary',
         },
         {
           id: 'convert_txt',
           titulo: 'Bloc de notas a PDF',
-          icono: 'align-left',
+          icono: 'file-document-outline',
+          familiaIcono: 'mci',
+          colorIcono: '#CBD5E1',
+          fondoIcono: 'rgba(148, 163, 184, 0.14)',
+          bordeIcono: 'rgba(148, 163, 184, 0.3)',
           etiqueta: 'TXT',
           varianteBadge: 'secondary',
         },
         {
           id: 'convert_image',
           titulo: 'Imágenes a PDF',
-          icono: 'image',
-          etiqueta: 'PNG / JPG',
+          icono: 'image-multiple-outline',
+          familiaIcono: 'mci',
+          colorIcono: '#F472B6',
+          fondoIcono: 'rgba(236, 72, 153, 0.14)',
+          bordeIcono: 'rgba(236, 72, 153, 0.3)',
+          etiqueta: 'JPG / PNG',
           varianteBadge: 'secondary',
         }
       ]
@@ -80,6 +122,9 @@ export default function HomeScreen({ onNavegar }) {
           id: 'comprimir',
           titulo: 'Comprimir PDF',
           icono: 'minimize-2',
+          colorIcono: '#34D399',
+          fondoIcono: 'rgba(16, 185, 129, 0.12)',
+          bordeIcono: 'rgba(16, 185, 129, 0.25)',
           etiqueta: 'Hasta 2GB',
           varianteBadge: 'success',
         },
@@ -87,6 +132,9 @@ export default function HomeScreen({ onNavegar }) {
           id: 'unir',
           titulo: 'Unir PDFs',
           icono: 'layers',
+          colorIcono: '#A78BFA',
+          fondoIcono: 'rgba(139, 92, 246, 0.12)',
+          bordeIcono: 'rgba(139, 92, 246, 0.25)',
           etiqueta: 'Merge',
           varianteBadge: 'secondary',
         },
@@ -94,6 +142,9 @@ export default function HomeScreen({ onNavegar }) {
           id: 'notas',
           titulo: 'Notas en PDF',
           icono: 'edit-3',
+          colorIcono: '#FBBF24',
+          fondoIcono: 'rgba(245, 158, 11, 0.12)',
+          bordeIcono: 'rgba(245, 158, 11, 0.25)',
           etiqueta: 'Anotaciones',
           varianteBadge: 'secondary',
         }
@@ -106,6 +157,9 @@ export default function HomeScreen({ onNavegar }) {
           id: 'ia',
           titulo: 'Groq AI (Resumen y Traductor)',
           icono: 'cpu',
+          colorIcono: '#818CF8',
+          fondoIcono: 'rgba(99, 102, 241, 0.12)',
+          bordeIcono: 'rgba(99, 102, 241, 0.25)',
           etiqueta: 'Groq LPU',
           varianteBadge: 'accent',
           fullWidth: true
@@ -171,8 +225,16 @@ export default function HomeScreen({ onNavegar }) {
                       onPress={() => onNavegar(item.id)}
                       activeOpacity={0.7}
                     >
-                      <View style={estilos.iconoCajaAncha}>
-                        <Feather name={item.icono} size={20} color={theme.colors.foreground} />
+                      <View
+                        style={[
+                          estilos.iconoCajaAncha,
+                          item.fondoIcono && {
+                            backgroundColor: item.fondoIcono,
+                            borderColor: item.bordeIcono
+                          }
+                        ]}
+                      >
+                        <IconoHerramienta item={item} tamano={22} />
                       </View>
                       <View style={estilos.infoAncha}>
                         <Text style={estilos.tituloAncho}>{item.titulo}</Text>
@@ -197,8 +259,16 @@ export default function HomeScreen({ onNavegar }) {
                     activeOpacity={0.7}
                   >
                     <View style={estilos.filaTopGrid}>
-                      <View style={estilos.iconoCajaGrid}>
-                        <Feather name={item.icono} size={18} color={theme.colors.foreground} />
+                      <View
+                        style={[
+                          estilos.iconoCajaGrid,
+                          item.fondoIcono && {
+                            backgroundColor: item.fondoIcono,
+                            borderColor: item.bordeIcono
+                          }
+                        ]}
+                      >
+                        <IconoHerramienta item={item} tamano={20} />
                       </View>
                       <Badge variant={item.varianteBadge || 'secondary'}>
                         {item.etiqueta}
@@ -308,8 +378,8 @@ const estilos = StyleSheet.create({
     marginBottom: 12,
   },
   iconoCajaGrid: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.secondary,
     borderWidth: 1,
@@ -330,7 +400,7 @@ const estilos = StyleSheet.create({
     flex: 1,
     marginRight: 4,
   },
-  // Bloque formato Ancho Completo (para herramientas singulares)
+  // Bloque formato Ancho Completo
   tarjetaAncha: {
     width: '100%',
     backgroundColor: theme.colors.card,
@@ -342,8 +412,8 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   iconoCajaAncha: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.secondary,
     borderWidth: 1,
