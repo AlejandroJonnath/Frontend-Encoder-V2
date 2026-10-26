@@ -2,8 +2,22 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import { CONFIGURACION } from '../config/constantes';
+import { supabase } from '../config/supabase';
 
 const TIPO_SUBIDA_MULTIPART = FileSystem?.FileSystemUploadType?.MULTIPART ?? 1;
+
+/**
+ * Obtiene el token JWT de la sesión activa de Supabase
+ */
+async function obtenerTokenAuth() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (err) {
+    console.warn('[Network] No se pudo obtener el token de sesión:', err.message);
+    return null;
+  }
+}
 
 /**
  * Lee cualquier URI de archivo local o de DocumentPicker en Base64
@@ -37,15 +51,11 @@ export async function leerUriComoBase64(uri) {
 
 /**
  * Extrae el nombre original del archivo desde su URI, preservando la extensión real.
- * DocumentPicker puede generar URIs como:
- *   file:///cache/DocumentPicker/1234567890_documento.docx
- * Esta función devuelve "documento.docx" eliminando el prefijo de timestamp.
  */
 function extraerNombreOriginalDeUri(uri) {
   try {
     const segmentos = uri.split('/');
     const nombreDesdeUri = decodeURIComponent(segmentos[segmentos.length - 1] || 'archivo.bin');
-    // Limpiar posibles timestamps de caché de DocumentPicker (ej: "1234567890_doc.docx" → "doc.docx")
     return nombreDesdeUri.replace(/^\d+_/, '');
   } catch (_) {
     return 'archivo.bin';
@@ -53,16 +63,52 @@ function extraerNombreOriginalDeUri(uri) {
 }
 
 /**
- * Procesa la subida y respuesta de cualquier operación documental.
- *
- * ESTRATEGIA DE DOS CANALES:
- * 1. Canal primario: FileSystem.uploadAsync (multipart nativo, más rápido)
- * 2. Canal fallback: fetch con Base64 JSON (garantiza lectura en Expo Go Android,
- *    donde las URIs de caché de DocumentPicker no son legibles por uploadAsync)
- *
- * IMPORTANTE: el fallback usa el nombre ORIGINAL del archivo de entrada (extraído del URI),
- * NO el nombreArchivoSalida. Usar el nombre de salida causaba que el backend viera ".pdf"
- * como extensión de un archivo Word/Excel y lo rechazara por tipo inválido.
+ * Realiza una petición JSON directa al backend con inyección automática de Auth
+ */
+export async function peticionApiJson({
+  endpoint,
+  metodo = 'POST',
+  body = null,
+  headersPersonalizados = {}
+}) {
+  const url = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
+  const token = await obtenerTokenAuth();
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'x-retorno-json': 'true',
+    ...headersPersonalizados
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const opciones = {
+    method: metodo,
+    headers
+  };
+
+  if (body) {
+    opciones.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  const res = await fetch(url, opciones);
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || !data.exito) {
+    const mensajeError = data.mensaje || `Error en el servidor (${res.status})`;
+    const error = new Error(mensajeError);
+    error.codigoEstado = data.codigoEstado || res.status;
+    throw error;
+  }
+
+  return data;
+}
+
+/**
+ * Procesa la subida y respuesta de cualquier operación documental con inyección de Auth.
  */
 export async function procesarOperacionNativa({
   endpoint,
@@ -73,6 +119,7 @@ export async function procesarOperacionNativa({
   compartirInmediato = true
 }) {
   const urlBase = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
+  const token = await obtenerTokenAuth();
   let data = null;
 
   // 1. Intento primario: FileSystem.uploadAsync (multipart nativo)
@@ -93,8 +140,12 @@ export async function procesarOperacionNativa({
       'Accept': 'application/json',
       'x-retorno-json': 'true'
     };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     if (parametros && Object.keys(parametros).length > 0) {
-      // Filtrar strings largos (como base64) para no exceder el límite de 8KB de cabeceras HTTP
       const paramsCabecera = {};
       Object.entries(parametros).forEach(([k, v]) => {
         if (k !== 'p12Base64' && (typeof v !== 'string' || v.length < 500)) {
@@ -117,47 +168,52 @@ export async function procesarOperacionNativa({
     if (uploadResult.status >= 200 && uploadResult.status < 300) {
       data = JSON.parse(uploadResult.body);
     } else {
-      throw new Error(`Status ${uploadResult.status}: ${uploadResult.body}`);
+      let msg = `Error al subir archivo (${uploadResult.status})`;
+      try {
+        const bodyParsed = JSON.parse(uploadResult.body);
+        if (bodyParsed.mensaje) msg = bodyParsed.mensaje;
+      } catch (_) {}
+      throw new Error(msg);
     }
   } catch (errUpload) {
     // 2. Canal fallback Base64 JSON
-    // Bypasea las restricciones de Scoped Storage de Expo Go Android.
-    //
-    // ⚠️ CRÍTICO - nombreArchivo:
-    //   Se usa el nombre ORIGINAL extraído del URI de ENTRADA (ej: "informe.docx"),
-    //   NO el nombreArchivoSalida (ej: "informe_converted.pdf").
-    //   Si se usara el de salida, el backend vería ".pdf" y rechazaría el Word/Excel.
     try {
       const base64 = await leerUriComoBase64(archivoUri);
       const nombreOriginal = extraerNombreOriginalDeUri(archivoUri);
 
+      const headersFetch = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'x-retorno-json': 'true'
+      };
+
+      if (token) {
+        headersFetch['Authorization'] = `Bearer ${token}`;
+      }
+
       const respuestaFetch = await fetch(urlBase, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'x-retorno-json': 'true'
-        },
+        headers: headersFetch,
         body: JSON.stringify({
           archivoBase64: base64,
-          nombreArchivo: nombreOriginal,   // ← extensión real del archivo de entrada
+          nombreArchivo: nombreOriginal,
           ...parametros
         })
       });
 
-      if (!respuestaFetch.ok) {
-        let msg = 'Error en el servidor al procesar el archivo.';
-        try {
-          const errData = await respuestaFetch.json();
-          if (errData.mensaje) msg = errData.mensaje;
-        } catch (_) {}
-        throw new Error(msg);
+      const jsonResp = await respuestaFetch.json().catch(() => ({}));
+
+      if (!respuestaFetch.ok || !jsonResp.exito) {
+        const msg = jsonResp.mensaje || `Error al procesar el archivo (${respuestaFetch.status})`;
+        const error = new Error(msg);
+        error.codigoEstado = jsonResp.codigoEstado || respuestaFetch.status;
+        throw error;
       }
 
-      data = await respuestaFetch.json();
+      data = jsonResp;
     } catch (errFallback) {
-      console.error('Error en canal alternativo:', errFallback.message);
-      throw new Error(errFallback.message || 'No se pudo procesar el archivo.');
+      console.error('[Network] Error en canal de subida:', errFallback.message);
+      throw new Error(errFallback.message || 'No se pudo conectar con el servidor.');
     }
   }
 

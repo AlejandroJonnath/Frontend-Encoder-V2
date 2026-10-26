@@ -4,3 +4,4 @@ export * from './Button';
 export * from './Input';
 export * from './Separator';
 export * from './ErrorModal';
+export * from './LoadingOverlay';

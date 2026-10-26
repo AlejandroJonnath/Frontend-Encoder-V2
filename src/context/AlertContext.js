@@ -125,6 +125,28 @@ export function AlertProvider({ children }) {
     });
   }, [mostrarAlerta]);
 
+  /** Modal de sesión expirada */
+  const mostrarSesionExpirada = useCallback((onReconectar) => {
+    mostrarAlerta({
+      tipo: 'error',
+      titulo: 'Sesión Expirada',
+      mensaje: 'Tu sesión ha caducado por motivos de seguridad. Por favor, inicia sesión nuevamente para continuar.',
+      textoBoton: 'Iniciar Sesión',
+      onConfirmar: onReconectar,
+    });
+  }, [mostrarAlerta]);
+
+  /** Modal de aviso o advertencia general */
+  const mostrarAviso = useCallback((titulo, mensaje, onConfirmar) => {
+    mostrarAlerta({
+      tipo: 'warning',
+      titulo: titulo || 'Atención',
+      mensaje: mensaje || '',
+      textoBoton: 'Entendido',
+      onConfirmar,
+    });
+  }, [mostrarAlerta]);
+
   return (
     <AlertContext.Provider
       value={{
@@ -139,6 +161,8 @@ export function AlertProvider({ children }) {
         mostrarErrorFormatoInvalido,
         mostrarErrorOperacion,
         mostrarExito,
+        mostrarSesionExpirada,
+        mostrarAviso,
       }}
     >
       {children}
