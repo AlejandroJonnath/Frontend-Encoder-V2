@@ -12,12 +12,8 @@ import { theme } from '../../../theme/shadcn';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 
-export default function ExcelSheetSelector({
-  visible,
-  reporte,
-  onConfirmar,
-  onCancelar
-}) {
+export default function ExcelSheetSelector({ visible, reporte, onConfirmar, onCancelar }) {
+
   if (!reporte || !reporte.hojas) return null;
 
   const [hojasSeleccionadas, setHojasSeleccionadas] = useState(
@@ -25,12 +21,16 @@ export default function ExcelSheetSelector({
   );
 
   const alternarHoja = (nombre) => {
+
     if (hojasSeleccionadas.includes(nombre)) {
+
       if (hojasSeleccionadas.length === 1) return;
       setHojasSeleccionadas(hojasSeleccionadas.filter(h => h !== nombre));
+
     } else {
       setHojasSeleccionadas([...hojasSeleccionadas, nombre]);
     }
+
   };
 
   return (

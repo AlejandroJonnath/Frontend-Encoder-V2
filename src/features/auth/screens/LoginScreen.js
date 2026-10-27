@@ -16,13 +16,16 @@ import { theme } from '../../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
+import { Separator } from '../../../components/ui/Separator';
+import GoogleIcon from '../../../components/icons/GoogleIcon';
 
 export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
-  const { iniciarSesion } = useAuth();
-  const { mostrarErrorCampos, mostrarErrorContrasena } = useAlerta();
+  const [bloqueadoGoogle, setBloqueadoGoogle] = useState(false);
+  const { iniciarSesion, iniciarSesionConGoogle } = useAuth();
+  const { mostrarErrorCampos, mostrarErrorContrasena, mostrarErrorOperacion } = useAlerta();
 
   const manejarLogin = async () => {
     if (!email || !password) {
@@ -40,6 +43,20 @@ export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena })
       );
     } finally {
       setBloqueado(false);
+    }
+  };
+
+  const manejarLoginGoogle = async () => {
+    try {
+      setBloqueadoGoogle(true);
+      await iniciarSesionConGoogle();
+    } catch (err) {
+      mostrarErrorOperacion(
+        'Error con Google',
+        err.message || 'No se pudo iniciar sesión con tu cuenta de Google.'
+      );
+    } finally {
+      setBloqueadoGoogle(false);
     }
   };
 
@@ -99,10 +116,28 @@ export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena })
                 size="lg"
                 onPress={manejarLogin}
                 cargando={bloqueado}
-                disabled={bloqueado}
+                disabled={bloqueado || bloqueadoGoogle}
                 style={estilos.botonPrincipal}
               >
                 Iniciar Sesión
+              </Button>
+
+              <View style={estilos.divisorContenedor}>
+                <Separator style={estilos.lineaDivisor} />
+                <Text style={estilos.textoDivisor}>O continuar con</Text>
+                <Separator style={estilos.lineaDivisor} />
+              </View>
+
+              <Button
+                variant="outline"
+                size="lg"
+                onPress={manejarLoginGoogle}
+                cargando={bloqueadoGoogle}
+                disabled={bloqueado || bloqueadoGoogle}
+                icon={<GoogleIcon size={18} />}
+                style={estilos.botonGoogle}
+              >
+                Continuar con Google
               </Button>
 
               <View style={estilos.filaRegistro}>
@@ -177,7 +212,31 @@ const estilos = StyleSheet.create({
   },
   botonPrincipal: {
     width: '100%',
+    marginBottom: 6,
+  },
+  divisorContenedor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 14,
+  },
+  lineaDivisor: {
+    flex: 1,
+    marginVertical: 0,
+    backgroundColor: theme.colors.border,
+  },
+  textoDivisor: {
+    marginHorizontal: 10,
+    fontSize: 12,
+    color: theme.colors.mutedForeground,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  botonGoogle: {
+    width: '100%',
     marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: theme.colors.border,
   },
   filaRegistro: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@
   "expo": {
     "name": "EncoderGoti",
     "slug": "encodergoti",
+    "scheme": "encodergoti",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -19,7 +20,8 @@
     },
     "plugins": [
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-web-browser"
     ]
   }
 }
