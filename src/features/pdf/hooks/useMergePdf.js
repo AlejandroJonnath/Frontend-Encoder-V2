@@ -64,6 +64,10 @@ export function useMergePdf() {
       setUniendo(true);
       const sesionId = `merge_${Date.now()}`;
 
+      // Despertar el servidor antes de la primera subida (evita timeout en cold start de Render)
+      setProgresoTexto('Conectando con el servidor...');
+      await asegurarServidorDespierto((msg) => setProgresoTexto(msg));
+
       for (let i = 0; i < archivosPdf.length; i++) {
         setProgresoTexto(`Subiendo archivo ${i + 1} de ${archivosPdf.length}...`);
         await subirPdfParaUnirApi({
