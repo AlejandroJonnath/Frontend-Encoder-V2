@@ -19,7 +19,10 @@ import { LoadingOverlay } from '../../../components/ui/LoadingOverlay';
 export default function CompressPdfScreen({ onVolver }) {
   const {
     archivoPdf,
+    calidad,
+    setCalidad,
     comprimiendo,
+    mensajeCarga,
     resultado,
     seleccionarNuevoPdf,
     ejecutarCompresion
@@ -43,7 +46,7 @@ export default function CompressPdfScreen({ onVolver }) {
           </View>
           <Text style={estilos.tituloGuia}>Optimización Cero Pérdidas</Text>
           <Text style={estilos.textoGuia}>
-            Reduce el peso del archivo remuestreando imágenes a 150 DPI y purgando tablas de objetos duplicadas sin degradar la nitidez de lectura.
+            Reduce el peso del archivo remuestreando imágenes y purgando tablas de objetos duplicadas sin degradar la nitidez de lectura.
           </Text>
         </View>
 
@@ -72,6 +75,33 @@ export default function CompressPdfScreen({ onVolver }) {
               </View>
               {archivoPdf && <Badge variant="success">Listo</Badge>}
             </TouchableOpacity>
+
+            {archivoPdf && (
+              <View style={estilos.contenedorCalidad}>
+                <Text style={estilos.etiquetaNivel}>Nivel de Compresión:</Text>
+                <View style={estilos.filaBotonesCalidad}>
+                  <TouchableOpacity
+                    style={[estilos.btnCalidad, calidad === 'ebook' && estilos.btnCalidadActivo]}
+                    onPress={() => setCalidad('ebook')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[estilos.textoBtnCalidad, calidad === 'ebook' && estilos.textoBtnCalidadActivo]}>
+                      Equilibrada (150 DPI)
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[estilos.btnCalidad, calidad === 'screen' && estilos.btnCalidadActivo]}
+                    onPress={() => setCalidad('screen')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[estilos.textoBtnCalidad, calidad === 'screen' && estilos.textoBtnCalidadActivo]}>
+                      Máxima (72 DPI)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </CardContent>
         </Card>
 
@@ -90,7 +120,9 @@ export default function CompressPdfScreen({ onVolver }) {
         {resultado && (
           <Card style={estilos.tarjetaResultado}>
             <View style={estilos.badgeExitoFila}>
-              <Badge variant="success">COMPRESIÓN EXITOSA</Badge>
+              <Badge variant={resultado.reduccion > 0 ? "success" : "secondary"}>
+                {resultado.reduccion > 0 ? "COMPRESIÓN EXITOSA" : "DOCUMENTO OPTIMIZADO"}
+              </Badge>
             </View>
 
             <View style={estilos.filaComparativa}>
@@ -102,15 +134,22 @@ export default function CompressPdfScreen({ onVolver }) {
               <Feather name="arrow-right" size={18} color={theme.colors.mutedForeground} />
 
               <View style={estilos.cajaMetrica}>
-                <Text style={estilos.etiquetaMetrica}>COMPRIMIDO</Text>
+                <Text style={estilos.etiquetaMetrica}>FINAL</Text>
                 <Text style={estilos.valorDespues}>{formatearBytes(resultado.tamanioComprimido)}</Text>
               </View>
             </View>
 
-            <View style={estilos.resumenReduccion}>
-              <Feather name="check" size={14} color={theme.colors.success} style={{ marginRight: 6 }} />
-              <Text style={estilos.textoReduccion}>
-                Reducción alcanzada: {resultado.reduccion}% del tamaño original
+            <View style={[estilos.resumenReduccion, resultado.reduccion === 0 && estilos.resumenReduccionCero]}>
+              <Feather
+                name={resultado.reduccion > 0 ? "check" : "info"}
+                size={14}
+                color={resultado.reduccion > 0 ? theme.colors.success : theme.colors.mutedForeground}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={[estilos.textoReduccion, resultado.reduccion === 0 && estilos.textoReduccionCero]}>
+                {resultado.reduccion > 0
+                  ? `Reducción alcanzada: ${resultado.reduccion}% del tamaño original`
+                  : 'El documento ya se encuentra en su tamaño óptimo sin pérdida de calidad'}
               </Text>
             </View>
           </Card>
@@ -119,7 +158,7 @@ export default function CompressPdfScreen({ onVolver }) {
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      <LoadingOverlay visible={comprimiendo} mensaje="Comprimiendo PDF y optimizando fuentes..." />
+      <LoadingOverlay visible={comprimiendo} mensaje={mensajeCarga || "Comprimiendo PDF y optimizando streams..."} />
     </ScreenContainer>
   );
 }
@@ -227,5 +266,49 @@ const estilos = StyleSheet.create({
     ...theme.typography.small,
     color: theme.colors.success,
     fontWeight: '600',
+  },
+  contenedorCalidad: {
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  etiquetaNivel: {
+    ...theme.typography.label,
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.mutedForeground,
+  },
+  filaBotonesCalidad: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  btnCalidad: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBackground,
+    alignItems: 'center',
+  },
+  btnCalidadActivo: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
+  },
+  textoBtnCalidad: {
+    ...theme.typography.small,
+    color: theme.colors.foreground,
+    fontWeight: '500',
+  },
+  textoBtnCalidadActivo: {
+    color: theme.colors.primaryForeground,
+    fontWeight: '700',
+  },
+  resumenReduccionCero: {
+    backgroundColor: theme.colors.muted,
+  },
+  textoReduccionCero: {
+    color: theme.colors.mutedForeground,
   },
 });

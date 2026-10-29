@@ -22,6 +22,7 @@ export function useCompressPdf() {
 
   const {
     cargando: comprimiendo,
+    mensajeCarga,
     resultado,
     ejecutar,
     reiniciar,
@@ -37,20 +38,29 @@ export function useCompressPdf() {
     const nombreSalida = generarNombreSalida(archivoPdf.name, '_compress', '.pdf');
 
     const res = await ejecutar(
-      comprimirPdfApi({
+      (actualizarProgreso) => comprimirPdfApi({
         archivoUri: archivoPdf.uri,
         calidad,
-        nombreArchivoSalida: nombreSalida
+        nombreArchivoSalida: nombreSalida,
+        onProgreso: actualizarProgreso
       }),
       { mensajeProgreso: 'Comprimiendo PDF con alta eficiencia...' }
     );
 
     if (res) {
+      const tamanioOriginal = res.tamanioOriginal || archivoPdf.size || 0;
+      const tamanioComprimido = res.tamanioComprimido || archivoPdf.size || 0;
+      const reduccion = res.porcentajeReduccion !== undefined
+        ? res.porcentajeReduccion
+        : (tamanioOriginal > 0
+            ? Math.max(0, Math.round(((tamanioOriginal - tamanioComprimido) / tamanioOriginal) * 100))
+            : 0);
+
       setResultado({
         nombreSalida,
-        tamanioOriginal: res.tamanioOriginal || archivoPdf.size,
-        tamanioComprimido: res.tamanioComprimido || Math.round(archivoPdf.size * 0.45),
-        reduccion: res.porcentajeReduccion || 55
+        tamanioOriginal,
+        tamanioComprimido,
+        reduccion
       });
     }
 
@@ -67,6 +77,7 @@ export function useCompressPdf() {
     calidad,
     setCalidad,
     comprimiendo,
+    mensajeCarga,
     cargandoSeleccion,
     resultado,
     seleccionarNuevoPdf,

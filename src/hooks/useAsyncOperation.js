@@ -12,13 +12,13 @@ export function useAsyncOperation({ tituloErrorPorDefecto = 'Error en Operación
 
   const { mostrarErrorOperacion } = useAlerta();
 
-  const ejecutar = useCallback(async (accionPromesa, { mensajeProgreso = 'Procesando...', tituloError = tituloErrorPorDefecto } = {}) => {
+  const ejecutar = useCallback(async (accion, { mensajeProgreso = 'Procesando...', tituloError = tituloErrorPorDefecto } = {}) => {
     try {
       setCargando(true);
       setMensajeCarga(mensajeProgreso);
       setError(null);
 
-      const res = await accionPromesa;
+      const res = typeof accion === 'function' ? await accion(setMensajeCarga) : await accion;
       setResultado(res);
       return res;
     } catch (err) {

@@ -6,6 +6,10 @@ import { supabase } from '../config/supabase';
 
 const TIPO_SUBIDA_MULTIPART = FileSystem?.FileSystemUploadType?.MULTIPART ?? 1;
 
+// Registro de última verificación de servidor despierto (para evitar pings redundantes)
+let ultimaVerificacionServidor = 0;
+const INTERVALO_CACHE_SALUD_MS = 60 * 1000; // 1 minuto
+
 /**
  * Obtiene el token JWT de la sesión activa de Supabase
  */
@@ -17,6 +21,69 @@ async function obtenerTokenAuth() {
     console.warn('[Network] No se pudo obtener el token de sesión:', err.message);
     return null;
   }
+}
+
+/**
+ * Despierta o verifica la disponibilidad del backend en Render (mitiga el Cold Start de 50s del plan gratuito)
+ */
+export async function asegurarServidorDespierto(onProgreso = null) {
+  const ahora = Date.now();
+  if (ahora - ultimaVerificacionServidor < INTERVALO_CACHE_SALUD_MS) {
+    return true;
+  }
+
+  const urlSalud = CONFIGURACION.URL_API_BACKEND
+    ? CONFIGURACION.URL_API_BACKEND.replace(/\/api\/?$/, '/salud')
+    : null;
+
+  if (!urlSalud || !urlSalud.startsWith('http')) {
+    return true;
+  }
+
+  try {
+    const controladorRapido = new AbortController();
+    const timeoutRapido = setTimeout(() => controladorRapido.abort(), 4000);
+
+    const ping = await fetch(urlSalud, {
+      method: 'GET',
+      signal: controladorRapido.signal
+    }).catch(() => null);
+
+    clearTimeout(timeoutRapido);
+
+    if (ping && ping.ok) {
+      ultimaVerificacionServidor = Date.now();
+      return true;
+    }
+  } catch (_) {
+    // Si falla el ping rápido, el servidor probablemente está en reposo (cold start de Render)
+  }
+
+  // Si no respondió de inmediato, notificar al usuario y esperar que Render despierte
+  if (onProgreso) {
+    onProgreso('Conectando con el servidor en la nube (iniciando instancia)...');
+  }
+
+  try {
+    const controladorEspera = new AbortController();
+    const timeoutEspera = setTimeout(() => controladorEspera.abort(), 45000);
+
+    const pingLargo = await fetch(urlSalud, {
+      method: 'GET',
+      signal: controladorEspera.signal
+    });
+
+    clearTimeout(timeoutEspera);
+
+    if (pingLargo && pingLargo.ok) {
+      ultimaVerificacionServidor = Date.now();
+      return true;
+    }
+  } catch (err) {
+    console.warn('[Network] Aviso al esperar inicio del servidor:', err.message);
+  }
+
+  return false;
 }
 
 /**
@@ -63,14 +130,43 @@ function extraerNombreOriginalDeUri(uri) {
 }
 
 /**
+ * Extrae el mensaje de error más descriptivo desde un cuerpo de respuesta JSON o texto
+ */
+function extraerMensajeError(cuerpo, codigoEstado) {
+  if (typeof cuerpo === 'string') {
+    try {
+      const parsed = JSON.parse(cuerpo);
+      if (parsed.mensaje) return parsed.mensaje;
+    } catch (_) {}
+  } else if (cuerpo && typeof cuerpo === 'object' && cuerpo.mensaje) {
+    return cuerpo.mensaje;
+  }
+
+  if (codigoEstado === 502 || codigoEstado === 503 || codigoEstado === 504) {
+    return 'El servidor en la nube se está iniciando o experimentó una pausa temporal (502). Por favor, intenta de nuevo en un momento.';
+  }
+  if (codigoEstado === 401 || codigoEstado === 403) {
+    return 'Tu sesión ha expirado o no tienes permisos para realizar esta operación. Inicia sesión nuevamente.';
+  }
+  if (codigoEstado === 413) {
+    return 'El archivo es demasiado grande para ser procesado por el servidor.';
+  }
+
+  return `Error en el servidor (${codigoEstado})`;
+}
+
+/**
  * Realiza una petición JSON directa al backend con inyección automática de Auth
  */
 export async function peticionApiJson({
   endpoint,
   metodo = 'POST',
   body = null,
-  headersPersonalizados = {}
+  headersPersonalizados = {},
+  onProgreso = null
 }) {
+  await asegurarServidorDespierto(onProgreso);
+
   const url = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
   const token = await obtenerTokenAuth();
 
@@ -98,7 +194,7 @@ export async function peticionApiJson({
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok || !data.exito) {
-    const mensajeError = data.mensaje || `Error en el servidor (${res.status})`;
+    const mensajeError = extraerMensajeError(data, res.status);
     const error = new Error(mensajeError);
     error.codigoEstado = data.codigoEstado || res.status;
     throw error;
@@ -116,68 +212,110 @@ export async function procesarOperacionNativa({
   campoNombre = 'pdf',
   parametros = {},
   nombreArchivoSalida,
-  compartirInmediato = true
+  compartirInmediato = true,
+  onProgreso = null
 }) {
+  // 0. Asegurar que el servidor esté activo (evita que uploads de 10MB cuelguen en un contenedor en reposo)
+  await asegurarServidorDespierto(onProgreso);
+
   const urlBase = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
   const token = await obtenerTokenAuth();
   let data = null;
 
-  // 1. Intento primario: FileSystem.uploadAsync (multipart nativo)
-  try {
-    const queryParams = new URLSearchParams();
-    if (parametros && typeof parametros === 'object') {
-      Object.entries(parametros).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && k !== 'p12Base64') {
-          queryParams.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
-        }
-      });
-    }
-
-    const qs = queryParams.toString();
-    const urlFinal = qs ? `${urlBase}?${qs}` : urlBase;
-
-    const headers = {
-      'Accept': 'application/json',
-      'x-retorno-json': 'true'
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (parametros && Object.keys(parametros).length > 0) {
-      const paramsCabecera = {};
-      Object.entries(parametros).forEach(([k, v]) => {
-        if (k !== 'p12Base64' && (typeof v !== 'string' || v.length < 500)) {
-          paramsCabecera[k] = v;
-        }
-      });
-      headers['x-parametros'] = JSON.stringify(paramsCabecera);
-      if (parametros.sesionId) {
-        headers['x-sesion-id'] = String(parametros.sesionId);
+  // Preparar URL con parámetros de consulta
+  const queryParams = new URLSearchParams();
+  if (parametros && typeof parametros === 'object') {
+    Object.entries(parametros).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && k !== 'p12Base64') {
+        queryParams.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
       }
-    }
-
-    const uploadResult = await FileSystem.uploadAsync(urlFinal, archivoUri, {
-      fieldName: campoNombre,
-      httpMethod: 'POST',
-      uploadType: TIPO_SUBIDA_MULTIPART,
-      headers
     });
+  }
 
-    if (uploadResult.status >= 200 && uploadResult.status < 300) {
-      data = JSON.parse(uploadResult.body);
-    } else {
-      let msg = `Error al subir archivo (${uploadResult.status})`;
-      try {
-        const bodyParsed = JSON.parse(uploadResult.body);
-        if (bodyParsed.mensaje) msg = bodyParsed.mensaje;
-      } catch (_) {}
-      throw new Error(msg);
+  const qs = queryParams.toString();
+  const urlFinal = qs ? `${urlBase}?${qs}` : urlBase;
+
+  const headers = {
+    'Accept': 'application/json',
+    'x-retorno-json': 'true'
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  if (parametros && Object.keys(parametros).length > 0) {
+    const paramsCabecera = {};
+    Object.entries(parametros).forEach(([k, v]) => {
+      if (k !== 'p12Base64' && (typeof v !== 'string' || v.length < 500)) {
+        paramsCabecera[k] = v;
+      }
+    });
+    headers['x-parametros'] = JSON.stringify(paramsCabecera);
+    if (parametros.sesionId) {
+      headers['x-sesion-id'] = String(parametros.sesionId);
     }
-  } catch (errUpload) {
-    // 2. Canal fallback Base64 JSON
+  }
+
+  if (onProgreso) {
+    onProgreso('Subiendo y procesando documento...');
+  }
+
+  // 1. Intento primario: FileSystem.uploadAsync (multipart nativo por streams)
+  let falloNativoLocal = false;
+  let reintentoRealizado = false;
+
+  while (!data) {
     try {
+      const uploadResult = await FileSystem.uploadAsync(urlFinal, archivoUri, {
+        fieldName: campoNombre,
+        httpMethod: 'POST',
+        uploadType: TIPO_SUBIDA_MULTIPART,
+        headers
+      });
+
+      if (uploadResult.status >= 200 && uploadResult.status < 300) {
+        data = JSON.parse(uploadResult.body);
+        break;
+      }
+
+      // Si el servidor devolvió 502/503/504 (típico arranque en frío de Render) y no hemos reintentado:
+      if ((uploadResult.status === 502 || uploadResult.status === 503 || uploadResult.status === 504) && !reintentoRealizado) {
+        reintentoRealizado = true;
+        if (onProgreso) {
+          onProgreso('El servidor está terminando de inicializarse. Reintentando subida...');
+        }
+        await new Promise(r => setTimeout(r, 4000));
+        continue; // Reintentar uploadAsync
+      }
+
+      // Si el servidor respondió con un código HTTP, NUNCA caer en Base64 ciegamente:
+      // el problema es del servidor o de credenciales, no del canal multipart local.
+      const errorMsg = extraerMensajeError(uploadResult.body, uploadResult.status);
+      const error = new Error(errorMsg);
+      error.codigoEstado = uploadResult.status;
+      throw error;
+
+    } catch (errUpload) {
+      // Si el error ya tiene un codigoEstado HTTP (el servidor respondió), propagarlo de inmediato
+      if (errUpload.codigoEstado) {
+        throw errUpload;
+      }
+
+      // Si fue un fallo nativo local del cliente (ej. Scoped Storage / URI no accesible nativamente):
+      console.warn('[Network] Falló uploadAsync nativo local, evaluando fallback Base64:', errUpload.message);
+      falloNativoLocal = true;
+      break;
+    }
+  }
+
+  // 2. Canal fallback Base64 JSON (SOLO si falló la lectura nativa del dispositivo y el archivo es < 15MB)
+  if (!data && falloNativoLocal) {
+    try {
+      if (onProgreso) {
+        onProgreso('Procesando archivo mediante canal alternativo...');
+      }
+
       const base64 = await leerUriComoBase64(archivoUri);
       const nombreOriginal = extraerNombreOriginalDeUri(archivoUri);
 
@@ -204,7 +342,7 @@ export async function procesarOperacionNativa({
       const jsonResp = await respuestaFetch.json().catch(() => ({}));
 
       if (!respuestaFetch.ok || !jsonResp.exito) {
-        const msg = jsonResp.mensaje || `Error al procesar el archivo (${respuestaFetch.status})`;
+        const msg = extraerMensajeError(jsonResp, respuestaFetch.status);
         const error = new Error(msg);
         error.codigoEstado = jsonResp.codigoEstado || respuestaFetch.status;
         throw error;
@@ -212,7 +350,7 @@ export async function procesarOperacionNativa({
 
       data = jsonResp;
     } catch (errFallback) {
-      console.error('[Network] Error en canal de subida:', errFallback.message);
+      console.error('[Network] Error en canal fallback:', errFallback.message);
       throw new Error(errFallback.message || 'No se pudo conectar con el servidor.');
     }
   }
@@ -223,6 +361,10 @@ export async function procesarOperacionNativa({
 
   // 3. Descarga y compartición automática del archivo resultante
   if (data.descargaUrl && compartirInmediato) {
+    if (onProgreso) {
+      onProgreso('Descargando archivo optimizado...');
+    }
+
     const nombreFinal = nombreArchivoSalida || data.nombreArchivo || 'documento.pdf';
     const uriDestinoLocal = `${FileSystem.documentDirectory}${nombreFinal}`;
 
