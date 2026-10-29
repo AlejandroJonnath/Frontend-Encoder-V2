@@ -6,14 +6,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "resizeMode": "contain",
-      "backgroundColor": "#09090B"
-    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.encodergoti.app",
       "adaptiveIcon": {
         "backgroundColor": "#09090B"
       }
@@ -21,7 +18,14 @@
     "plugins": [
       "expo-sharing",
       "expo-status-bar",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "06d9f3ee-4310-4cbe-bb65-dec5fdd65c50"
+      }
+    },
+    "owner": "jonnatheon"
   }
 }

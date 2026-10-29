@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 18.13.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kxzonorzqvvtakioaypo.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4em9ub3J6cXZ2dGFraW9heXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NDY2OTYsImV4cCI6MjEwODQyMjY5Nn0.2UTJcNpdnUK9lzQvw_jbRvNoXqC-0ufi8Jpzlq_zpNU",
+        "EXPO_PUBLIC_API_URL": "https://backend-encoder-v2.onrender.com/api"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kxzonorzqvvtakioaypo.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4em9ub3J6cXZ2dGFraW9heXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NDY2OTYsImV4cCI6MjEwODQyMjY5Nn0.2UTJcNpdnUK9lzQvw_jbRvNoXqC-0ufi8Jpzlq_zpNU",
+        "EXPO_PUBLIC_API_URL": "https://backend-encoder-v2.onrender.com/api"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
