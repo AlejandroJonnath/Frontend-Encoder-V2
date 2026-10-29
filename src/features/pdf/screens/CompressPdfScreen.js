@@ -89,7 +89,7 @@ export default function CompressPdfScreen({ onVolver }) {
                     activeOpacity={0.8}
                   >
                     <Text style={[estilos.textoBtnCalidad, calidad === 'ebook' && estilos.textoBtnCalidadActivo]}>
-                      Equilibrada (150 DPI)
+                      Equilibrada (~60% - 75%)
                     </Text>
                   </TouchableOpacity>
 
@@ -99,7 +99,7 @@ export default function CompressPdfScreen({ onVolver }) {
                     activeOpacity={0.8}
                   >
                     <Text style={[estilos.textoBtnCalidad, calidad === 'screen' && estilos.textoBtnCalidadActivo]}>
-                      Máxima (72 DPI)
+                      Extrema (~75% - 90%)
                     </Text>
                   </TouchableOpacity>
                 </View>

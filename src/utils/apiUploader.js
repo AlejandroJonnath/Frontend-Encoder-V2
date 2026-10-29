@@ -241,13 +241,6 @@ export async function procesarOperacionNativa({
     throw new Error('Operación cancelada');
   }
 
-  // 0. Asegurar que el servidor esté activo (evita que uploads de 10MB cuelguen en un contenedor en reposo)
-  await asegurarServidorDespierto(onProgreso);
-
-  if (signal?.aborted) {
-    throw new Error('Operación cancelada');
-  }
-
   const urlBase = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
   const token = await obtenerTokenAuth();
   let data = null;
@@ -349,18 +342,18 @@ export async function procesarOperacionNativa({
 
       uploadTaskActual = task;
 
-      // Iniciar simulación suave mientras Ghostscript procesa el archivo en el backend (50% a 78%)
+      // Iniciar simulación suave mientras Ghostscript procesa el archivo en el backend (50% a 82%)
       let progresoGs = 50;
       intervaloGhostscript = setInterval(() => {
         if (signal?.aborted) {
           clearInterval(intervaloGhostscript);
           return;
         }
-        if (progresoGs < 78) {
-          progresoGs += 3;
+        if (progresoGs < 82) {
+          progresoGs += 4;
           onProgreso?.('Optimizando con Ghostscript y remuestreando...', progresoGs);
         }
-      }, 450);
+      }, 250);
 
       const uploadResult = await task.uploadAsync();
       clearInterval(intervaloGhostscript);
@@ -372,7 +365,7 @@ export async function procesarOperacionNativa({
       if (uploadResult && uploadResult.status >= 200 && uploadResult.status < 300) {
         data = JSON.parse(uploadResult.body);
         if (onProgreso) {
-          onProgreso('Optimización completada en el servidor...', 80);
+          onProgreso('Optimización completada en el servidor...', 85);
         }
         break;
       }
@@ -381,9 +374,9 @@ export async function procesarOperacionNativa({
       if (uploadResult && (uploadResult.status === 502 || uploadResult.status === 503 || uploadResult.status === 504) && !reintentoRealizado) {
         reintentoRealizado = true;
         if (onProgreso) {
-          onProgreso('El servidor está terminando de inicializarse. Reintentando subida...', 20);
+          onProgreso('Conectando con el servidor en la nube...', 15);
         }
-        await new Promise(r => setTimeout(r, 4000));
+        await asegurarServidorDespierto(onProgreso);
         continue;
       }
 
@@ -401,6 +394,16 @@ export async function procesarOperacionNativa({
 
       if (errUpload.codigoEstado) {
         throw errUpload;
+      }
+
+      // Si fue error de red/conexión inicial y no hemos reintentado, despertar servidor
+      if (!reintentoRealizado && (errUpload.message?.includes('Network') || errUpload.message?.includes('connect') || errUpload.message?.includes('timed out'))) {
+        reintentoRealizado = true;
+        if (onProgreso) {
+          onProgreso('Iniciando instancia en la nube. Reintentando...', 15);
+        }
+        await asegurarServidorDespierto(onProgreso);
+        continue;
       }
 
       console.warn('[Network] Falló uploadAsync nativo local, evaluando fallback Base64:', errUpload.message);
@@ -467,7 +470,7 @@ export async function procesarOperacionNativa({
     throw new Error(data?.mensaje || 'Error en la respuesta del servidor.');
   }
 
-  // 3. Descarga y compartición automática del archivo resultante con progreso medible
+  // 3. Descarga directa y compartición automática del archivo resultante
   if (data.descargaUrl && compartirInmediato) {
     if (signal?.aborted) {
       throw new Error('Operación cancelada');
@@ -477,24 +480,14 @@ export async function procesarOperacionNativa({
     const uriDestinoLocal = `${FileSystem.documentDirectory}${nombreFinal}`;
 
     try {
-      const downloadTask = FileSystem.createDownloadResumable(
-        data.descargaUrl,
-        uriDestinoLocal,
-        {},
-        (progresoDescarga) => {
-          if (signal?.aborted) return;
-          if (progresoDescarga.totalBytesExpectedToWrite > 0) {
-            const ratio = progresoDescarga.totalBytesWritten / progresoDescarga.totalBytesExpectedToWrite;
-            const pctDescarga = Math.min(100, Math.round(ratio * 100));
-            // Descarga abarca del 80% al 98%
-            const pctGlobal = Math.round(80 + ratio * 18);
-            onProgreso?.(`Descargando archivo optimizado (${pctDescarga}%)...`, pctGlobal);
-          }
-        }
-      );
+      if (onProgreso) {
+        onProgreso('Descargando PDF optimizado...', 90);
+      }
 
-      downloadTaskActual = downloadTask;
-      const downloadResult = await downloadTask.downloadAsync();
+      const downloadResult = await FileSystem.downloadAsync(
+        data.descargaUrl,
+        uriDestinoLocal
+      );
 
       if (signal?.aborted) {
         await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});
