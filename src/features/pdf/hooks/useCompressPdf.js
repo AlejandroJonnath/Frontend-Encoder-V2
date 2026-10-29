@@ -4,6 +4,7 @@ import { useAsyncOperation } from '../../../hooks/useAsyncOperation';
 import { comprimirPdfApi } from '../../../api/pdf.api';
 import { useAlerta } from '../../../context/AlertContext';
 import { generarNombreSalida } from '../../../utils/fileFormatters';
+import { limpiarCacheDocumentos } from '../../../utils/apiUploader';
 
 export function useCompressPdf() {
   const { mostrarErrorFaltaArchivo } = useAlerta();
@@ -23,8 +24,11 @@ export function useCompressPdf() {
   const {
     cargando: comprimiendo,
     mensajeCarga,
+    progreso,
+    cancelando,
     resultado,
     ejecutar,
+    cancelar,
     reiniciar,
     setResultado
   } = useAsyncOperation({ tituloErrorPorDefecto: 'Error en Compresión' });
@@ -38,13 +42,14 @@ export function useCompressPdf() {
     const nombreSalida = generarNombreSalida(archivoPdf.name, '_compress', '.pdf');
 
     const res = await ejecutar(
-      (actualizarProgreso) => comprimirPdfApi({
+      (actualizarProgreso, signal) => comprimirPdfApi({
         archivoUri: archivoPdf.uri,
         calidad,
         nombreArchivoSalida: nombreSalida,
-        onProgreso: actualizarProgreso
+        onProgreso: actualizarProgreso,
+        signal
       }),
-      { mensajeProgreso: 'Comprimiendo PDF con alta eficiencia...' }
+      { mensajeProgreso: 'Iniciando compresión de PDF...' }
     );
 
     if (res) {
@@ -67,6 +72,15 @@ export function useCompressPdf() {
     return res;
   }, [archivoPdf, calidad, ejecutar, mostrarErrorFaltaArchivo, setResultado]);
 
+  const cancelarCompresion = useCallback(async () => {
+    await cancelar(async () => {
+      if (archivoPdf?.uri) {
+        await limpiarCacheDocumentos(archivoPdf.uri);
+      }
+      limpiarPdf();
+    });
+  }, [cancelar, archivoPdf, limpiarPdf]);
+
   const seleccionarNuevoPdf = useCallback(async () => {
     reiniciar();
     return await seleccionarPdf();
@@ -78,11 +92,14 @@ export function useCompressPdf() {
     setCalidad,
     comprimiendo,
     mensajeCarga,
+    progreso,
+    cancelando,
     cargandoSeleccion,
     resultado,
     seleccionarNuevoPdf,
     limpiarPdf,
     ejecutarCompresion,
+    cancelarCompresion,
     reiniciar
   };
 }

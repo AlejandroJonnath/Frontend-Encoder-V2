@@ -8,7 +8,26 @@ const TIPO_SUBIDA_MULTIPART = FileSystem?.FileSystemUploadType?.MULTIPART ?? 1;
 
 // Registro de última verificación de servidor despierto (para evitar pings redundantes)
 let ultimaVerificacionServidor = 0;
-const INTERVALO_CACHE_SALUD_MS = 60 * 1000; // 1 minuto
+const INTERVALO_CACHE_SALUD_MS = 5 * 60 * 1000; // 5 minutos de caché activo
+
+/**
+ * Limpia archivos temporales y caché de DocumentPicker para liberar almacenamiento del dispositivo
+ */
+export async function limpiarCacheDocumentos(archivoUri = null) {
+  try {
+    if (archivoUri && (archivoUri.startsWith('file://') || archivoUri.startsWith('/'))) {
+      await FileSystem.deleteAsync(archivoUri, { idempotent: true }).catch(() => {});
+    }
+
+    const dirPicker = `${FileSystem.cacheDirectory}DocumentPicker/`;
+    const infoDir = await FileSystem.getInfoAsync(dirPicker).catch(() => ({ exists: false }));
+    if (infoDir.exists) {
+      await FileSystem.deleteAsync(dirPicker, { idempotent: true }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[Cache] Error limpiando caché temporal:', err.message);
+  }
+}
 
 /**
  * Obtiene el token JWT de la sesión activa de Supabase
@@ -204,7 +223,8 @@ export async function peticionApiJson({
 }
 
 /**
- * Procesa la subida y respuesta de cualquier operación documental con inyección de Auth.
+ * Procesa la subida y respuesta de cualquier operación documental con inyección de Auth,
+ * soporte de barra de progreso en tiempo real y cancelación reactiva.
  */
 export async function procesarOperacionNativa({
   endpoint,
@@ -213,10 +233,20 @@ export async function procesarOperacionNativa({
   parametros = {},
   nombreArchivoSalida,
   compartirInmediato = true,
-  onProgreso = null
+  onProgreso = null,
+  signal = null
 }) {
+  // Si la operación ya fue cancelada antes de empezar
+  if (signal?.aborted) {
+    throw new Error('Operación cancelada');
+  }
+
   // 0. Asegurar que el servidor esté activo (evita que uploads de 10MB cuelguen en un contenedor en reposo)
   await asegurarServidorDespierto(onProgreso);
+
+  if (signal?.aborted) {
+    throw new Error('Operación cancelada');
+  }
 
   const urlBase = `${CONFIGURACION.URL_API_BACKEND}${endpoint}`;
   const token = await obtenerTokenAuth();
@@ -258,51 +288,121 @@ export async function procesarOperacionNativa({
   }
 
   if (onProgreso) {
-    onProgreso('Subiendo y procesando documento...');
+    onProgreso('Iniciando subida del documento...', 5);
   }
 
-  // 1. Intento primario: FileSystem.uploadAsync (multipart nativo por streams)
+  let uploadTaskActual = null;
+  let downloadTaskActual = null;
+
+  // Conectar listener de cancelación externa al signal
+  const alAbortar = () => {
+    try {
+      if (uploadTaskActual && typeof uploadTaskActual.cancelAsync === 'function') {
+        uploadTaskActual.cancelAsync().catch(() => {});
+      }
+      if (downloadTaskActual && typeof downloadTaskActual.cancelAsync === 'function') {
+        downloadTaskActual.cancelAsync().catch(() => {});
+      }
+    } catch (_) {}
+  };
+
+  if (signal) {
+    signal.addEventListener('abort', alAbortar);
+  }
+
+  // 1. Intento primario: FileSystem.createUploadTask (multipart nativo con progreso continuo)
   let falloNativoLocal = false;
   let reintentoRealizado = false;
 
   while (!data) {
-    try {
-      const uploadResult = await FileSystem.uploadAsync(urlFinal, archivoUri, {
-        fieldName: campoNombre,
-        httpMethod: 'POST',
-        uploadType: TIPO_SUBIDA_MULTIPART,
-        headers
-      });
+    if (signal?.aborted) {
+      throw new Error('Operación cancelada');
+    }
 
-      if (uploadResult.status >= 200 && uploadResult.status < 300) {
+    let intervaloGhostscript = null;
+
+    try {
+      const task = FileSystem.createUploadTask(
+        urlFinal,
+        archivoUri,
+        {
+          fieldName: campoNombre,
+          httpMethod: 'POST',
+          uploadType: TIPO_SUBIDA_MULTIPART,
+          headers
+        },
+        (progreso) => {
+          if (signal?.aborted) return;
+          if (progreso.totalBytesExpectedToSend > 0) {
+            const ratio = progreso.totalBytesSent / progreso.totalBytesExpectedToSend;
+            const pctSubida = Math.min(100, Math.round(ratio * 100));
+            // Subida ocupa del 5% al 50%
+            const pctGlobal = Math.round(5 + ratio * 45);
+            if (pctSubida < 100) {
+              onProgreso?.(`Subiendo documento (${pctSubida}%)...`, pctGlobal);
+            } else {
+              onProgreso?.('Documento recibido en el servidor...', 50);
+            }
+          }
+        }
+      );
+
+      uploadTaskActual = task;
+
+      // Iniciar simulación suave mientras Ghostscript procesa el archivo en el backend (50% a 78%)
+      let progresoGs = 50;
+      intervaloGhostscript = setInterval(() => {
+        if (signal?.aborted) {
+          clearInterval(intervaloGhostscript);
+          return;
+        }
+        if (progresoGs < 78) {
+          progresoGs += 3;
+          onProgreso?.('Optimizando con Ghostscript y remuestreando...', progresoGs);
+        }
+      }, 450);
+
+      const uploadResult = await task.uploadAsync();
+      clearInterval(intervaloGhostscript);
+
+      if (signal?.aborted) {
+        throw new Error('Operación cancelada');
+      }
+
+      if (uploadResult && uploadResult.status >= 200 && uploadResult.status < 300) {
         data = JSON.parse(uploadResult.body);
+        if (onProgreso) {
+          onProgreso('Optimización completada en el servidor...', 80);
+        }
         break;
       }
 
-      // Si el servidor devolvió 502/503/504 (típico arranque en frío de Render) y no hemos reintentado:
-      if ((uploadResult.status === 502 || uploadResult.status === 503 || uploadResult.status === 504) && !reintentoRealizado) {
+      // Si el servidor devolvió 502/503/504 y no hemos reintentado:
+      if (uploadResult && (uploadResult.status === 502 || uploadResult.status === 503 || uploadResult.status === 504) && !reintentoRealizado) {
         reintentoRealizado = true;
         if (onProgreso) {
-          onProgreso('El servidor está terminando de inicializarse. Reintentando subida...');
+          onProgreso('El servidor está terminando de inicializarse. Reintentando subida...', 20);
         }
         await new Promise(r => setTimeout(r, 4000));
-        continue; // Reintentar uploadAsync
+        continue;
       }
 
-      // Si el servidor respondió con un código HTTP, NUNCA caer en Base64 ciegamente:
-      // el problema es del servidor o de credenciales, no del canal multipart local.
-      const errorMsg = extraerMensajeError(uploadResult.body, uploadResult.status);
+      const errorMsg = extraerMensajeError(uploadResult?.body, uploadResult?.status);
       const error = new Error(errorMsg);
-      error.codigoEstado = uploadResult.status;
+      error.codigoEstado = uploadResult?.status;
       throw error;
 
     } catch (errUpload) {
-      // Si el error ya tiene un codigoEstado HTTP (el servidor respondió), propagarlo de inmediato
+      if (intervaloGhostscript) clearInterval(intervaloGhostscript);
+
+      if (signal?.aborted || errUpload.message === 'Operación cancelada') {
+        throw new Error('Operación cancelada');
+      }
+
       if (errUpload.codigoEstado) {
         throw errUpload;
       }
 
-      // Si fue un fallo nativo local del cliente (ej. Scoped Storage / URI no accesible nativamente):
       console.warn('[Network] Falló uploadAsync nativo local, evaluando fallback Base64:', errUpload.message);
       falloNativoLocal = true;
       break;
@@ -310,10 +410,10 @@ export async function procesarOperacionNativa({
   }
 
   // 2. Canal fallback Base64 JSON (SOLO si falló la lectura nativa del dispositivo y el archivo es < 15MB)
-  if (!data && falloNativoLocal) {
+  if (!data && falloNativoLocal && !signal?.aborted) {
     try {
       if (onProgreso) {
-        onProgreso('Procesando archivo mediante canal alternativo...');
+        onProgreso('Procesando archivo mediante canal alternativo...', 40);
       }
 
       const base64 = await leerUriComoBase64(archivoUri);
@@ -336,7 +436,8 @@ export async function procesarOperacionNativa({
           archivoBase64: base64,
           nombreArchivo: nombreOriginal,
           ...parametros
-        })
+        }),
+        signal
       });
 
       const jsonResp = await respuestaFetch.json().catch(() => ({}));
@@ -350,39 +451,81 @@ export async function procesarOperacionNativa({
 
       data = jsonResp;
     } catch (errFallback) {
+      if (signal?.aborted || errFallback.name === 'AbortError') {
+        throw new Error('Operación cancelada');
+      }
       console.error('[Network] Error en canal fallback:', errFallback.message);
       throw new Error(errFallback.message || 'No se pudo conectar con el servidor.');
     }
+  }
+
+  if (signal?.aborted) {
+    throw new Error('Operación cancelada');
   }
 
   if (!data || !data.exito) {
     throw new Error(data?.mensaje || 'Error en la respuesta del servidor.');
   }
 
-  // 3. Descarga y compartición automática del archivo resultante
+  // 3. Descarga y compartición automática del archivo resultante con progreso medible
   if (data.descargaUrl && compartirInmediato) {
-    if (onProgreso) {
-      onProgreso('Descargando archivo optimizado...');
+    if (signal?.aborted) {
+      throw new Error('Operación cancelada');
     }
 
     const nombreFinal = nombreArchivoSalida || data.nombreArchivo || 'documento.pdf';
     const uriDestinoLocal = `${FileSystem.documentDirectory}${nombreFinal}`;
 
-    const downloadResult = await FileSystem.downloadAsync(
-      data.descargaUrl,
-      uriDestinoLocal
-    );
+    try {
+      const downloadTask = FileSystem.createDownloadResumable(
+        data.descargaUrl,
+        uriDestinoLocal,
+        {},
+        (progresoDescarga) => {
+          if (signal?.aborted) return;
+          if (progresoDescarga.totalBytesExpectedToWrite > 0) {
+            const ratio = progresoDescarga.totalBytesWritten / progresoDescarga.totalBytesExpectedToWrite;
+            const pctDescarga = Math.min(100, Math.round(ratio * 100));
+            // Descarga abarca del 80% al 98%
+            const pctGlobal = Math.round(80 + ratio * 18);
+            onProgreso?.(`Descargando archivo optimizado (${pctDescarga}%)...`, pctGlobal);
+          }
+        }
+      );
 
-    const puedeCompartir = await Sharing.isAvailableAsync();
-    if (puedeCompartir) {
-      await Sharing.shareAsync(downloadResult.uri, {
-        dialogTitle: `Compartir ${nombreFinal}`,
-        mimeType: 'application/pdf',
-        UTI: 'com.adobe.pdf'
-      });
-    } else {
-      Alert.alert('Archivo generado', `Guardado con éxito como ${nombreFinal}`);
+      downloadTaskActual = downloadTask;
+      const downloadResult = await downloadTask.downloadAsync();
+
+      if (signal?.aborted) {
+        await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});
+        throw new Error('Operación cancelada');
+      }
+
+      if (onProgreso) {
+        onProgreso('¡Listo para compartir!', 100);
+      }
+
+      const puedeCompartir = await Sharing.isAvailableAsync();
+      if (puedeCompartir && downloadResult?.uri) {
+        await Sharing.shareAsync(downloadResult.uri, {
+          dialogTitle: `Compartir ${nombreFinal}`,
+          mimeType: 'application/pdf',
+          UTI: 'com.adobe.pdf'
+        });
+      } else {
+        Alert.alert('Archivo generado', `Guardado con éxito como ${nombreFinal}`);
+      }
+    } catch (errDownload) {
+      if (signal?.aborted || errDownload.message === 'Operación cancelada') {
+        await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});
+        throw new Error('Operación cancelada');
+      }
+      throw errDownload;
     }
+  }
+
+  if (signal) {
+    signal.removeEventListener('abort', alAbortar);
   }
 
   return data;

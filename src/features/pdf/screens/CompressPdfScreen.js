@@ -23,9 +23,12 @@ export default function CompressPdfScreen({ onVolver }) {
     setCalidad,
     comprimiendo,
     mensajeCarga,
+    progreso,
+    cancelando,
     resultado,
     seleccionarNuevoPdf,
-    ejecutarCompresion
+    ejecutarCompresion,
+    cancelarCompresion
   } = useCompressPdf();
 
   return (
@@ -158,7 +161,14 @@ export default function CompressPdfScreen({ onVolver }) {
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      <LoadingOverlay visible={comprimiendo} mensaje={mensajeCarga || "Comprimiendo PDF y optimizando streams..."} />
+      <LoadingOverlay
+        visible={comprimiendo}
+        mensaje={mensajeCarga || "Comprimiendo PDF y optimizando streams..."}
+        submensaje="Remuestreando páginas y optimizando tablas. Puedes cancelar si lo deseas."
+        progreso={progreso}
+        onCancelar={cancelarCompresion}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }

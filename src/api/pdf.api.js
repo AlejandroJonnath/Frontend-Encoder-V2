@@ -3,7 +3,7 @@ import { procesarOperacionNativa, peticionApiJson } from '../utils/apiUploader';
 /**
  * Servicio para comprimir un archivo PDF
  */
-export async function comprimirPdfApi({ archivoUri, calidad = 'ebook', nombreArchivoSalida, onProgreso = null }) {
+export async function comprimirPdfApi({ archivoUri, calidad = 'ebook', nombreArchivoSalida, onProgreso = null, signal = null }) {
   return await procesarOperacionNativa({
     endpoint: '/pdf/comprimir',
     archivoUri,
@@ -11,7 +11,8 @@ export async function comprimirPdfApi({ archivoUri, calidad = 'ebook', nombreArc
     parametros: { calidad },
     nombreArchivoSalida,
     compartirInmediato: true,
-    onProgreso
+    onProgreso,
+    signal
   });
 }
 
