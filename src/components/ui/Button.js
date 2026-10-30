@@ -88,12 +88,12 @@ export function Button({
       ) : (
         <>
           {icon && <>{icon}</>}
-          {typeof children === 'string' ? (
+          {React.isValidElement(children) ? (
+            children
+          ) : (
             <Text style={[estilos.textoBase, texto, icon && { marginLeft: 8 }, textStyle]}>
               {children}
             </Text>
-          ) : (
-            children
           )}
         </>
       )}

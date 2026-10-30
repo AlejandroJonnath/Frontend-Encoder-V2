@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing';
 import { useAlerta } from '../../../context/AlertContext';
 import { subirPdfParaUnirApi, procesarUnirSesionApi } from '../../../api/pdf.api';
 import { generarNombreSalida } from '../../../utils/fileFormatters';
+import { asegurarServidorDespierto } from '../../../utils/apiUploader';
 
 export function useMergePdf() {
   const { mostrarErrorCampos, mostrarErrorOperacion } = useAlerta();
@@ -21,7 +22,19 @@ export function useMergePdf() {
       });
 
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        setArchivosPdf(prev => [...prev, ...res.assets]);
+        const assetsPreparados = await Promise.all(res.assets.map(async (doc) => {
+          let uriAccesible = doc.uri;
+          try {
+            if (FileSystem?.cacheDirectory && !uriAccesible.startsWith(FileSystem.cacheDirectory) && !uriAccesible.startsWith(FileSystem.documentDirectory)) {
+              const nombreLimpio = (doc.name || 'doc.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+              const destino = `${FileSystem.cacheDirectory}merge_${Date.now()}_${nombreLimpio}`;
+              await FileSystem.copyAsync({ from: uriAccesible, to: destino });
+              uriAccesible = destino;
+            }
+          } catch (_) {}
+          return { ...doc, uri: uriAccesible };
+        }));
+        setArchivosPdf(prev => [...prev, ...assetsPreparados]);
       }
     } catch (err) {
       mostrarErrorOperacion('Error de acceso', 'No se pudieron seleccionar los archivos.');

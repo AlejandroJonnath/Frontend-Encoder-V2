@@ -155,7 +155,7 @@ export default function ConvertExcelScreen({ onVolver }) {
                       <Text style={estilos.nombreHojaPreview} numberOfLines={1}>
                         {hoja.nombre}
                       </Text>
-                      <Text style={estilos.filasHojaPreview}>({hoja.filas} filas)</Text>
+                      <Text style={estilos.filasHojaPreview}>({hoja.filasTotales ?? hoja.filas ?? 0} filas)</Text>
                     </View>
                   ))}
                   {reporteExcel.totalHojas > 4 && (

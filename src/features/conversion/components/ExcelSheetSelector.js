@@ -109,7 +109,7 @@ export default function ExcelSheetSelector({ visible, reporte, onConfirmar, onCa
               onPress={() => onConfirmar(hojasSeleccionadas)}
               style={{ flex: 1.5 }}
             >
-              Convertir ({hojasSeleccionadas.length}) a PDF
+              {`Convertir (${hojasSeleccionadas.length}) a PDF`}
             </Button>
           </View>
         </View>
