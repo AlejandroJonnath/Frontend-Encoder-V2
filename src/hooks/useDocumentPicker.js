@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useAlerta } from '../context/AlertContext';
 
 const LIMITE_TAMANIO_2GB = 2 * 1024 * 1024 * 1024;
@@ -47,8 +48,29 @@ export function useDocumentPicker({
           return null;
         }
 
-        setArchivo(doc);
-        return doc;
+        // 3. Garantizar que la URI esté accesible en el cache de la aplicación
+        let uriAccesible = doc.uri;
+        try {
+          if (FileSystem?.cacheDirectory && !uriAccesible.startsWith(FileSystem.cacheDirectory) && !uriAccesible.startsWith(FileSystem.documentDirectory)) {
+            const nombreLimpio = (doc.name || 'documento.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+            const destinoCache = `${FileSystem.cacheDirectory}picker_${Date.now()}_${nombreLimpio}`;
+            await FileSystem.copyAsync({
+              from: uriAccesible,
+              to: destinoCache
+            });
+            uriAccesible = destinoCache;
+          }
+        } catch (_) {
+          // Si copyAsync no puede moverlo (ej. restricción de scope en Expo Go), se preserva la URI original
+        }
+
+        const docPreparado = {
+          ...doc,
+          uri: uriAccesible
+        };
+
+        setArchivo(docPreparado);
+        return docPreparado;
       }
       return null;
     } catch (err) {
