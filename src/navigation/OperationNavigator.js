@@ -10,6 +10,9 @@ import ConvertExcelScreen from '../features/conversion/screens/ConvertExcelScree
 import ConvertPptScreen from '../features/conversion/screens/ConvertPptScreen';
 import ConvertTxtScreen from '../features/conversion/screens/ConvertTxtScreen';
 import ConvertImageScreen from '../features/conversion/screens/ConvertImageScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import SupportScreen from '../screens/settings/SupportScreen';
+import AdminScreen from '../screens/admin/AdminScreen';
 
 //  Navegador del flujo de operaciones documentales protegidas.
 // Importa directamente desde la ubicación canónica en features/*/screens 
@@ -19,6 +22,19 @@ export function OperationNavigator() {
   const volverAHome = () => setRuta('home');
 
   switch (ruta) {
+    case 'configuracion':
+      return (
+        <SettingsScreen
+          onVolver={volverAHome}
+          onNavegarASoporte={() => setRuta('soporte')}
+          onNavegarAAdmin={() => setRuta('admin')}
+        />
+      );
+    case 'soporte':
+      return <SupportScreen onVolver={() => setRuta('configuracion')} />;
+    case 'admin':
+      return <AdminScreen onVolver={() => setRuta('configuracion')} />;
+
     case 'firmar':
       return <SignPdfScreen onVolver={volverAHome} />;
     case 'comprimir':

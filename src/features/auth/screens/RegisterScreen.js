@@ -17,6 +17,10 @@ import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { Separator } from '../../../components/ui/Separator';
 import GoogleIcon from '../../../components/icons/GoogleIcon';
+import TermsAndPrivacyModal from '../../../components/TermsAndPrivacyModal';
+import axios from 'axios';
+import { CONFIGURACION } from '../../../config/constantes';
+import { supabase } from '../../../config/supabase';
 
 export default function RegisterScreen({ onIrALogin }) {
   const [nombre, setNombre] = useState('');
@@ -27,6 +31,11 @@ export default function RegisterScreen({ onIrALogin }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
   const [bloqueadoGoogle, setBloqueadoGoogle] = useState(false);
+
+  // Estados para el flujo obligatorio de Políticas de Privacidad y Términos
+  const [modalTerminosVisible, setModalTerminosVisible] = useState(false);
+  const [cargandoTerminos, setCargandoTerminos] = useState(false);
+  const [usuarioRegistradoTemporal, setUsuarioRegistradoTemporal] = useState(null);
 
   const { registrarUsuario, iniciarSesionConGoogle } = useAuth();
   const {
@@ -52,7 +61,6 @@ export default function RegisterScreen({ onIrALogin }) {
   };
 
   const manejarRegistro = async () => {
-
     if (!nombre || !apellido || !username || !email || !password) {
       mostrarErrorCampos('Por favor completa todos los campos del formulario.');
       return;
@@ -69,26 +77,88 @@ export default function RegisterScreen({ onIrALogin }) {
     }
 
     try {
-
       setBloqueado(true);
 
-      await registrarUsuario({ nombre, apellido, username, email, password });
+      const resultado = await registrarUsuario({ nombre, apellido, username, email, password });
+      const usuarioCreado = resultado?.user || (await supabase.auth.getUser())?.data?.user;
 
+      setUsuarioRegistradoTemporal(usuarioCreado);
+      // Inmediatamente tras registrarse, desplegar obligatoriamente las Políticas y Términos
+      setModalTerminosVisible(true);
+    } catch (err) {
+      mostrarErrorOperacion('Error al registrar', err.message || 'No se pudo completar el registro.');
+    } finally {
+      setBloqueado(false);
+    }
+  };
+
+  const manejarAceptarTerminos = async () => {
+    try {
+      setCargandoTerminos(true);
+
+      // Registrar consentimiento en backend
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await axios.post(
+            `${CONFIGURACION.API_BASE_URL}/auth/consentimiento`,
+            { policyVersion: '1.0.0', termsVersion: '1.0.0' },
+            { headers: { Authorization: `Bearer ${session.access_token}` } }
+          );
+        }
+      } catch (apiErr) {
+        console.warn('[Consentimiento] Aviso al enviar consentimiento al backend:', apiErr.message);
+      }
+
+      setModalTerminosVisible(false);
       mostrarExito(
-        '¡Registro Exitoso!',
-        'Tu cuenta ha sido creada. Si Supabase requiere confirmación por correo, revisa tu bandeja de entrada antes de iniciar sesión.',
+        '¡Registro y Términos Aceptados!',
+        'Tu cuenta ha sido activada correctamente. Ya puedes iniciar sesión en EncoderGoti.',
         onIrALogin
       );
-
     } catch (err) {
-
-      mostrarErrorOperacion('Error al registrar', err.message || 'No se pudo completar el registro.');
-
+      mostrarErrorOperacion('Error', 'No se pudo registrar la aceptación: ' + err.message);
     } finally {
-
-      setBloqueado(false);
-
+      setCargandoTerminos(false);
     }
+  };
+
+  const manejarRechazarTerminos = async () => {
+    try {
+      setCargandoTerminos(true);
+
+      // Si el usuario rechaza, disparar rollback para purgar la cuenta recién creada
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          await axios.post(
+            `${CONFIGURACION.API_BASE_URL}/auth/rollback-registration`,
+            {},
+            { headers: { Authorization: `Bearer ${session.access_token}` } }
+          );
+        }
+      } catch (apiErr) {
+        console.warn('[Rollback] Aviso rollback en backend:', apiErr.message);
+      }
+
+      // Cerrar sesión en el cliente
+      await supabase.auth.signOut();
+      setModalTerminosVisible(false);
+      setUsuarioRegistradoTemporal(null);
+
+      mostrarExito(
+        'Registro Cancelado',
+        'Has rechazado las políticas de privacidad y términos. Tu cuenta y datos temporales han sido eliminados por completo.',
+        onIrALogin
+      );
+    } catch (err) {
+      setModalTerminosVisible(false);
+      mostrarErrorOperacion('Aviso', 'El registro fue cancelado y se cerró la sesión.');
+      onIrALogin();
+    } finally {
+      setCargandoTerminos(false);
+    }
+  };
   };
 
   return (
@@ -192,6 +262,14 @@ export default function RegisterScreen({ onIrALogin }) {
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal obligatorio de Políticas de Privacidad y Términos de Uso con rollback */}
+      <TermsAndPrivacyModal
+        visible={modalTerminosVisible}
+        cargando={cargandoTerminos}
+        onAceptar={manejarAceptarTerminos}
+        onRechazar={manejarRechazarTerminos}
+      />
     </ScreenContainer>
   );
 }

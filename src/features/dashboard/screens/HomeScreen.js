@@ -56,6 +56,13 @@ const SECCIONES = [
       { id: 'ia', titulo: 'Groq AI (Resumen y Traductor)', icono: 'cpu', colorIcono: '#818CF8', fondoIcono: 'rgba(99, 102, 241, 0.12)', bordeIcono: 'rgba(99, 102, 241, 0.25)', etiqueta: 'Groq LPU', varianteBadge: 'accent', fullWidth: true },
     ],
   },
+  {
+    titulo: 'Cuenta, Soporte & Gobernanza de Datos',
+    items: [
+      { id: 'configuracion', titulo: 'Configuración y Backups', icono: 'settings', colorIcono: '#38BDF8', fondoIcono: 'rgba(56, 189, 248, 0.12)', bordeIcono: 'rgba(56, 189, 248, 0.25)', etiqueta: 'Cuenta & Datos', varianteBadge: 'secondary' },
+      { id: 'soporte',       titulo: 'Centro de Soporte',       icono: 'help-circle', colorIcono: '#F472B6', fondoIcono: 'rgba(244, 114, 182, 0.12)', bordeIcono: 'rgba(244, 114, 182, 0.25)', etiqueta: 'Reportar',     varianteBadge: 'secondary' },
+    ],
+  },
 ];
 
 export default function HomeScreen({ onNavegar }) {
@@ -74,14 +81,24 @@ export default function HomeScreen({ onNavegar }) {
         />
       }
       botonDerecho={
-        <Button
-          variant="outline"
-          size="sm"
-          onPress={cerrarSesion}
-          icon={<Feather name="log-out" size={13} color={theme.colors.mutedForeground} />}
-        >
-          Salir
-        </Button>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => onNavegar('configuracion')}
+            icon={<Feather name="settings" size={13} color={theme.colors.mutedForeground} />}
+          >
+            Ajustes
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={cerrarSesion}
+            icon={<Feather name="log-out" size={13} color={theme.colors.mutedForeground} />}
+          >
+            Salir
+          </Button>
+        </View>
       }
     >
       <ScrollView
