@@ -43,16 +43,19 @@ export async function procesarUnirSesionApi({ sesionId, nombresOrdenados }) {
 /**
  * Servicio para agregar una nota gráfica a un PDF
  */
-export async function agregarNotaPdfApi({ archivoUri, textoNota, posicion, nombreArchivoSalida }) {
+export async function agregarNotaPdfApi({ archivoUri, textoNota, posicion, autor = '', nombreArchivoSalida, signal = null, onProgreso = null }) {
   return await procesarOperacionNativa({
     endpoint: '/pdf/agregar-nota',
     archivoUri,
     campoNombre: 'pdf',
     parametros: {
       nota: textoNota,
-      posicion: typeof posicion === 'object' ? JSON.stringify(posicion) : posicion
+      posicion: typeof posicion === 'object' ? JSON.stringify(posicion) : posicion,
+      autor: autor || ''
     },
     nombreArchivoSalida,
-    compartirInmediato: true
+    compartirInmediato: true,
+    signal,
+    onProgreso
   });
 }

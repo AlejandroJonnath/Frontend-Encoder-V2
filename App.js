@@ -5,8 +5,11 @@ import { AuthProvider } from './src/context/AuthContext';
 import { AlertProvider } from './src/context/AlertContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { theme } from './src/theme/shadcn';
+import { useKeepAlive } from './src/hooks/useKeepAlive';
 
 export default function App() {
+  useKeepAlive();
+
   return (
     <SafeAreaProvider>
       <AlertProvider>

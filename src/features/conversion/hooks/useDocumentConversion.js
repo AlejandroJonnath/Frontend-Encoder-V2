@@ -33,7 +33,11 @@ export function useDocumentConversion({
 
   const {
     cargando: convirtiendo,
+    mensajeCarga,
+    progreso,
+    cancelando,
     ejecutar,
+    cancelar: cancelarConversion,
     resultado,
     reiniciar
   } = useAsyncOperation({ tituloErrorPorDefecto: 'Error en Conversión' });
@@ -48,10 +52,12 @@ export function useDocumentConversion({
     const nombreSalida = generarNombreSalida(archivo.name, '_converted', '.pdf');
 
     return await ejecutar(
-      convertirDocumentoAPdfApi({
+      (actualizarProgreso, signal) => convertirDocumentoAPdfApi({
         tipo,
         archivoUri: archivo.uri,
-        nombreArchivoSalida: nombreSalida
+        nombreArchivoSalida: nombreSalida,
+        signal,
+        onProgreso: actualizarProgreso
       }),
       { mensajeProgreso: `Convirtiendo ${etiquetaFormato} a PDF de alta resolución...` }
     );
@@ -65,7 +71,8 @@ export function useDocumentConversion({
     }
 
     return await ejecutar(
-      (async () => {
+      async (actualizarProgreso, signal) => {
+        if (signal?.aborted) throw new Error('Operación cancelada');
         const res = await inspeccionarExcelApi({ archivoUri: archivo.uri });
         if (res && res.reporte) {
           setReporteExcel(res.reporte);
@@ -73,7 +80,7 @@ export function useDocumentConversion({
           setSelectorExcelVisible(true);
         }
         return res;
-      })(),
+      },
       { mensajeProgreso: 'Analizando hojas de cálculo...' }
     );
   }, [archivo, ejecutar, mostrarErrorFaltaArchivo]);
@@ -88,10 +95,13 @@ export function useDocumentConversion({
     setSelectorExcelVisible(false);
 
     return await ejecutar(
-      procesarExcelAPdfApi({
-        archivoTemporalId,
-        hojasSeleccionadas
-      }),
+      async (actualizarProgreso, signal) => {
+        if (signal?.aborted) throw new Error('Operación cancelada');
+        return await procesarExcelAPdfApi({
+          archivoTemporalId,
+          hojasSeleccionadas
+        });
+      },
       { mensajeProgreso: 'Generando PDF con las hojas seleccionadas...' }
     );
   }, [archivoTemporalId, ejecutar, mostrarErrorCampos]);
@@ -99,6 +109,9 @@ export function useDocumentConversion({
   return {
     archivo,
     convirtiendo,
+    mensajeCarga,
+    progreso,
+    cancelando,
     cargandoSeleccion,
     resultado,
     reporteExcel,
@@ -109,6 +122,7 @@ export function useDocumentConversion({
     ejecutarConversionSimple,
     inspeccionarExcel,
     procesarHojasExcel,
+    cancelarConversion,
     reiniciar
   };
 }

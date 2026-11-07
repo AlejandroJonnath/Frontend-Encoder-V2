@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { theme } from '../../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
+import { LoadingOverlay } from '../../../components/ui/LoadingOverlay';
 import { useAlerta } from '../../../context/AlertContext';
 
 const IMG_COLOR = '#F472B6';
@@ -24,6 +25,17 @@ export default function ConvertImageScreen({ onVolver }) {
   const { mostrarErrorFormatoInvalido, mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
   const [archivoImagen, setArchivoImagen] = useState(null);
   const [convirtiendo, setConvirtiendo] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const abortControllerRef = useRef(null);
+
+  const cancelarConversion = () => {
+    setCancelando(true);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setConvirtiendo(false);
+    setCancelando(false);
+  };
 
   const seleccionarImagen = async () => {
     try {
@@ -52,8 +64,11 @@ export default function ConvertImageScreen({ onVolver }) {
       return;
     }
 
+    abortControllerRef.current = new AbortController();
+
     try {
       setConvirtiendo(true);
+      setCancelando(false);
 
       const nombreBase = archivoImagen.name.replace(/\.(png|jpg|jpeg)$/i, '');
       const nombreSalida = `${nombreBase}_converted.pdf`;
@@ -63,13 +78,18 @@ export default function ConvertImageScreen({ onVolver }) {
         archivoUri: archivoImagen.uri,
         campoNombre: 'archivo',
         nombreArchivoSalida: nombreSalida,
-        compartirInmediato: true
+        compartirInmediato: true,
+        signal: abortControllerRef.current.signal
       });
 
     } catch (err) {
-      mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir la imagen a PDF.');
+      if (err.message !== 'Operación cancelada') {
+        mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir la imagen a PDF.');
+      }
     } finally {
       setConvirtiendo(false);
+      setCancelando(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -146,6 +166,14 @@ export default function ConvertImageScreen({ onVolver }) {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      <LoadingOverlay
+        visible={convirtiendo}
+        mensaje="Convirtiendo imagen a PDF..."
+        submensaje="Compilando archivo gráfico a formato vectorial estándar"
+        onCancelar={cancelarConversion}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }

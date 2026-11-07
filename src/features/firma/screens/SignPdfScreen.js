@@ -29,11 +29,15 @@ export default function SignPdfScreen({ onVolver }) {
     posicionFirma,
     setPosicionFirma,
     firmando,
+    mensajeCarga,
+    progreso,
+    cancelando,
     modalVisorVisible,
     setModalVisorVisible,
     seleccionarPdf,
     seleccionarP12,
-    ejecutarFirma
+    ejecutarFirma,
+    cancelarFirma
   } = useSignPdf();
 
   return (
@@ -251,7 +255,14 @@ export default function SignPdfScreen({ onVolver }) {
         </SafeAreaView>
       </Modal>
 
-      <LoadingOverlay visible={firmando} mensaje="Validando certificado y estampando firma digital..." />
+      <LoadingOverlay
+        visible={firmando}
+        mensaje={mensajeCarga || "Validando certificado y estampando firma digital..."}
+        submensaje="Aplicando criptografía PAdES compatible con FirmaEC"
+        progreso={progreso}
+        onCancelar={cancelarFirma}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }

@@ -22,16 +22,28 @@ import { LoadingOverlay } from '../../../components/ui/LoadingOverlay';
 export default function AddNoteScreen({ onVolver }) {
   const {
     archivoPdf,
+    nombreAutor,
+    setNombreAutor,
     textoNota,
     setTextoNota,
     posicionNota,
     setPosicionNota,
     procesando,
+    mensajeCarga,
+    progreso,
+    cancelando,
     modalVisorVisible,
     setModalVisorVisible,
     seleccionarPdf,
-    ejecutarAgregarNota
+    ejecutarAgregarNota,
+    cancelarNota
   } = useAddNote();
+
+  const fechaHoy = new Date().toLocaleDateString('es-EC', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 
   return (
     <ScreenContainer
@@ -96,21 +108,39 @@ export default function AddNoteScreen({ onVolver }) {
               <Text style={estilos.textoNumeroPaso}>2</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <CardTitle style={estilos.tituloPaso}>Contenido de la Nota</CardTitle>
-              <CardDescription>Comentario, revisión o instrucción</CardDescription>
+              <CardTitle style={estilos.tituloPaso}>Contenido y Autor</CardTitle>
+              <CardDescription>Persona que realiza la nota y mensaje</CardDescription>
             </View>
           </CardHeader>
 
-          <CardContent>
-            <TextInput
-              style={estilos.inputArea}
-              placeholder="Escribe aquí tu comentario o instrucción..."
-              placeholderTextColor={theme.colors.mutedForeground}
-              multiline
-              numberOfLines={3}
-              value={textoNota}
-              onChangeText={setTextoNota}
-            />
+          <CardContent style={{ gap: theme.spacing.md }}>
+            <View>
+              <View style={estilos.filaEtiquetaFecha}>
+                <Text style={estilos.labelCampo}>Autor / Nombre:</Text>
+                <Badge variant="secondary">Fecha: {fechaHoy}</Badge>
+              </View>
+              <TextInput
+                style={estilos.inputAutor}
+                placeholder="Ej. Ing. Juan Pérez o tu nombre..."
+                placeholderTextColor={theme.colors.mutedForeground}
+                value={nombreAutor}
+                onChangeText={setNombreAutor}
+                maxLength={40}
+              />
+            </View>
+
+            <View>
+              <Text style={estilos.labelCampo}>Mensaje de la nota:</Text>
+              <TextInput
+                style={estilos.inputArea}
+                placeholder="Escribe aquí tu comentario o instrucción..."
+                placeholderTextColor={theme.colors.mutedForeground}
+                multiline
+                numberOfLines={3}
+                value={textoNota}
+                onChangeText={setTextoNota}
+              />
+            </View>
           </CardContent>
         </Card>
 
@@ -224,7 +254,14 @@ export default function AddNoteScreen({ onVolver }) {
         </SafeAreaView>
       </Modal>
 
-      <LoadingOverlay visible={procesando} mensaje="Incrustando nota vectorial en el PDF..." />
+      <LoadingOverlay
+        visible={procesando}
+        mensaje={mensajeCarga || "Incrustando nota vectorial en el PDF..."}
+        submensaje="Insertando autor, fecha actual y comentario en la posición fijada"
+        progreso={progreso}
+        onCancelar={cancelarNota}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }
@@ -307,6 +344,28 @@ const estilos = StyleSheet.create({
   textoSecundarioDropzone: {
     ...theme.typography.small,
     marginTop: 2,
+  },
+  filaEtiquetaFecha: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  labelCampo: {
+    ...theme.typography.label,
+    color: theme.colors.foreground,
+    marginBottom: 6,
+  },
+  inputAutor: {
+    backgroundColor: theme.colors.inputBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    color: theme.colors.foreground,
+    ...theme.typography.body,
+    height: 42,
   },
   inputArea: {
     backgroundColor: theme.colors.inputBackground,

@@ -29,13 +29,17 @@ export default function ConvertExcelScreen({ onVolver }) {
   const {
     archivo: archivoExcel,
     convirtiendo,
+    mensajeCarga,
+    progreso,
+    cancelando,
     cargandoSeleccion,
     reporteExcel,
     selectorExcelVisible,
     setSelectorExcelVisible,
     seleccionarArchivo,
     inspeccionarExcel,
-    procesarHojasExcel
+    procesarHojasExcel,
+    cancelarConversion
   } = useDocumentConversion({
     tipo: 'excel',
     extensionesPermitidas: ['.xlsx', '.xls'],
@@ -194,7 +198,14 @@ export default function ConvertExcelScreen({ onVolver }) {
         />
       )}
 
-      <LoadingOverlay visible={convirtiendo} mensaje="Generando PDF con las hojas seleccionadas..." />
+      <LoadingOverlay
+        visible={convirtiendo}
+        mensaje={mensajeCarga || "Generando PDF con las hojas seleccionadas..."}
+        submensaje="Formateando tablas y ajustando hojas a página PDF"
+        progreso={progreso}
+        onCancelar={cancelarConversion}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }

@@ -37,7 +37,11 @@ export function useSignPdf() {
 
   const {
     cargando: firmando,
+    mensajeCarga,
+    progreso,
+    cancelando,
     ejecutar,
+    cancelar: cancelarFirma,
     resultado,
     reiniciar
   } = useAsyncOperation({ tituloErrorPorDefecto: 'Error en Firma Electrónica' });
@@ -58,15 +62,22 @@ export function useSignPdf() {
 
     const nombreSalida = generarNombreSalida(archivoPdf.name, '_signed', '.pdf');
 
-    return await ejecutar((async () => {
+    return await ejecutar(async (actualizarProgreso, signal) => {
+      if (signal?.aborted) throw new Error('Operación cancelada');
+      actualizarProgreso('Procesando certificado digital...', 20);
+
       // 1. Subir certificado y obtener token temporal
       const resP12 = await subirCertificadoP12Api({
-        archivoP12Uri: archivoP12.uri
+        archivoP12Uri: archivoP12.uri,
+        signal
       });
 
       if (!resP12 || !resP12.tokenP12) {
         throw new Error(resP12?.mensaje || 'No se pudo procesar el certificado digital.');
       }
+
+      if (signal?.aborted) throw new Error('Operación cancelada');
+      actualizarProgreso('Validando firma criptográfica PAdES...', 50);
 
       // 2. Firmar documento
       return await firmarPdfApi({
@@ -75,9 +86,11 @@ export function useSignPdf() {
         contrasena: contrasenaP12,
         posicion: posicionFirma,
         razon: 'Firma Electrónica Autorizada',
-        nombreArchivoSalida: nombreSalida
+        nombreArchivoSalida: nombreSalida,
+        signal,
+        onProgreso: actualizarProgreso
       });
-    })(), { mensajeProgreso: 'Validando certificado y estampando firma digital...' });
+    }, { mensajeProgreso: 'Validando certificado y estampando firma digital...' });
   }, [archivoPdf, archivoP12, contrasenaP12, posicionFirma, ejecutar, mostrarErrorFaltaArchivo, mostrarErrorCampos]);
 
   return {
@@ -88,6 +101,9 @@ export function useSignPdf() {
     posicionFirma,
     setPosicionFirma,
     firmando,
+    mensajeCarga,
+    progreso,
+    cancelando,
     cargandoPdf,
     cargandoP12,
     resultado,
@@ -98,6 +114,7 @@ export function useSignPdf() {
     seleccionarP12,
     limpiarP12,
     ejecutarFirma,
+    cancelarFirma,
     reiniciar
   };
 }

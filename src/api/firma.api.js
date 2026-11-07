@@ -3,12 +3,13 @@ import { procesarOperacionNativa } from '../utils/apiUploader';
 /**
  * Servicio para subir un certificado digital .p12 y obtener un token temporal
  */
-export async function subirCertificadoP12Api({ archivoP12Uri }) {
+export async function subirCertificadoP12Api({ archivoP12Uri, signal = null }) {
   return await procesarOperacionNativa({
     endpoint: '/pdf/subir-p12',
     archivoUri: archivoP12Uri,
     campoNombre: 'p12',
-    compartirInmediato: false
+    compartirInmediato: false,
+    signal
   });
 }
 
@@ -22,7 +23,9 @@ export async function firmarPdfApi({
   contrasena,
   posicion,
   razon = 'Firma Electrónica Documental',
-  nombreArchivoSalida
+  nombreArchivoSalida,
+  signal = null,
+  onProgreso = null
 }) {
   const parametros = {
     contrasena,
@@ -43,6 +46,8 @@ export async function firmarPdfApi({
     campoNombre: 'pdf',
     parametros,
     nombreArchivoSalida,
-    compartirInmediato: true
+    compartirInmediato: true,
+    signal,
+    onProgreso
   });
 }

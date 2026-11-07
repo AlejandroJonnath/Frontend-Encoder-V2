@@ -478,6 +478,15 @@ export async function procesarOperacionNativa({
     let intervaloGhostscript = null;
 
     try {
+      const parametrosParaSubida = {};
+      if (parametros && typeof parametros === 'object') {
+        Object.entries(parametros).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && k !== 'p12Base64') {
+            parametrosParaSubida[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+          }
+        });
+      }
+
       const task = FileSystem.createUploadTask(
         urlFinal,
         uriAsegurada,
@@ -485,7 +494,8 @@ export async function procesarOperacionNativa({
           fieldName: campoNombre,
           httpMethod: 'POST',
           uploadType: TIPO_SUBIDA_MULTIPART,
-          headers
+          headers,
+          parameters: parametrosParaSubida
         },
         (progreso) => {
           if (signal?.aborted) return;
@@ -636,6 +646,24 @@ export async function procesarOperacionNativa({
         data.descargaUrl,
         uriDestinoLocal
       );
+
+      if (downloadResult && downloadResult.status >= 400) {
+        let errorMsg = 'Error al descargar el documento generado.';
+        try {
+          const contenidoError = await FileSystem.readAsStringAsync(uriDestinoLocal);
+          errorMsg = extraerMensajeError(contenidoError, downloadResult.status);
+        } catch (_) {}
+        await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});
+        const errDescarga = new Error(errorMsg);
+        errDescarga.codigoEstado = downloadResult.status;
+        throw errDescarga;
+      }
+
+      const infoArchivo = await FileSystem.getInfoAsync(uriDestinoLocal);
+      if (!infoArchivo.exists || (infoArchivo.size !== undefined && infoArchivo.size < 50)) {
+        await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});
+        throw new Error('El archivo descargado no es un documento válido o está vacío.');
+      }
 
       if (signal?.aborted) {
         await FileSystem.deleteAsync(uriDestinoLocal, { idempotent: true }).catch(() => {});

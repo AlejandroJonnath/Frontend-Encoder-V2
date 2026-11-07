@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,14 @@ import {
   ScrollView
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Feather } from '@expo/vector-icons';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenContainer from '../../../components/ScreenContainer';
 import { procesarOperacionNativa } from '../../../utils/apiUploader';
 import { theme } from '../../../theme/shadcn';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
+import { LoadingOverlay } from '../../../components/ui/LoadingOverlay';
 import { useAlerta } from '../../../context/AlertContext';
 
 const PPT_COLOR = '#FB923C';
@@ -23,6 +23,17 @@ export default function ConvertPptScreen({ onVolver }) {
   const { mostrarErrorFormatoInvalido, mostrarErrorFaltaArchivo, mostrarErrorOperacion } = useAlerta();
   const [archivoPpt, setArchivoPpt] = useState(null);
   const [convirtiendo, setConvirtiendo] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const abortControllerRef = useRef(null);
+
+  const cancelarConversion = () => {
+    setCancelando(true);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setConvirtiendo(false);
+    setCancelando(false);
+  };
 
   const seleccionarPpt = async () => {
     try {
@@ -54,8 +65,11 @@ export default function ConvertPptScreen({ onVolver }) {
       return;
     }
 
+    abortControllerRef.current = new AbortController();
+
     try {
       setConvirtiendo(true);
+      setCancelando(false);
 
       const nombreBase = archivoPpt.name.replace(/\.(pptx|ppt)$/i, '');
       const nombreSalida = `${nombreBase}_converted.pdf`;
@@ -65,13 +79,18 @@ export default function ConvertPptScreen({ onVolver }) {
         archivoUri: archivoPpt.uri,
         campoNombre: 'archivo',
         nombreArchivoSalida: nombreSalida,
-        compartirInmediato: true
+        compartirInmediato: true,
+        signal: abortControllerRef.current.signal
       });
 
     } catch (err) {
-      mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir la presentación PowerPoint a PDF.');
+      if (err.message !== 'Operación cancelada') {
+        mostrarErrorOperacion('Error en Conversión', err.message || 'No se pudo convertir la presentación PowerPoint a PDF.');
+      }
     } finally {
       setConvirtiendo(false);
+      setCancelando(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -138,6 +157,14 @@ export default function ConvertPptScreen({ onVolver }) {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      <LoadingOverlay
+        visible={convirtiendo}
+        mensaje="Convirtiendo diapositivas a PDF..."
+        submensaje="Rasterizando láminas y preservando elementos gráficos"
+        onCancelar={cancelarConversion}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }

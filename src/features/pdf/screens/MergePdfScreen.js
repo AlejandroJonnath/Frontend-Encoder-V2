@@ -20,12 +20,14 @@ export default function MergePdfScreen({ onVolver }) {
   const {
     archivosPdf,
     uniendo,
+    cancelando,
     progresoTexto,
     agregarPdfs,
     eliminarArchivo,
     moverArriba,
     moverAbajo,
     ejecutarUnion,
+    cancelarUnion,
     limpiar
   } = useMergePdf();
 
@@ -136,7 +138,13 @@ export default function MergePdfScreen({ onVolver }) {
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      <LoadingOverlay visible={uniendo} mensaje={progresoTexto || 'Uniendo documentos...'} />
+      <LoadingOverlay
+        visible={uniendo}
+        mensaje={progresoTexto || 'Uniendo documentos...'}
+        submensaje="Procesando páginas y optimizando el peso final"
+        onCancelar={cancelarUnion}
+        cancelando={cancelando}
+      />
     </ScreenContainer>
   );
 }
