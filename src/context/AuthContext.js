@@ -142,6 +142,9 @@ export const AuthProvider = ({ children }) => {
     if (msg.includes('Email not confirmed')) {
       return new Error('Tu correo aún no ha sido confirmado. Por favor revisa tu bandeja de entrada.');
     }
+    if (msg.includes('oauth') || msg.includes('state') || msg.includes('expired')) {
+      return new Error('El intento de inicio de sesión expiró o fue interrumpido. Por favor intenta de nuevo.');
+    }
     return new Error(msg || 'Ocurrió un error en la autenticación.');
   };
 
@@ -200,7 +203,24 @@ export const AuthProvider = ({ children }) => {
       const params = extraerParametrosDeUrl(url);
 
       if (params.error_description || params.error) {
-        throw new Error(params.error_description || params.error || 'Error en la autorización de Google');
+        const errorDesc = decodeURIComponent(params.error_description || params.error || '');
+        console.warn('[Auth Google] Parámetro de error en URL de retorno:', errorDesc);
+
+        // Si ya hay sesión activa en Supabase (por ejemplo logueada por otro listener o reintento), ignorar error
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUsuario(session.user);
+          await cargarPerfil(session.user.id);
+          return { session };
+        }
+
+        // Si es un state expirado o no encontrado (deep link residual de un intento previo), no romper la app
+        if (errorDesc.includes('state') || errorDesc.includes('expired')) {
+          console.log('[Auth Google] State OAuth residual o expirado ignorado limpiamente.');
+          return null;
+        }
+
+        throw traducirErrorAuth(new Error(errorDesc));
       }
 
       // Flujo con fragmento de URL (Tokens directos)

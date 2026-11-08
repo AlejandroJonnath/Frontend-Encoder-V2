@@ -51,9 +51,20 @@ export default function LoginScreen({ onIrARegistro, onIrAOlvidasteContrasena })
       setBloqueadoGoogle(true);
       await iniciarSesionConGoogle();
     } catch (err) {
+      const msg = err?.message || '';
+      // Si el usuario simplemente canceló la ventana o fue un state previo expirado, no mostrar popup alarmante
+      if (
+        msg.includes('cancel') ||
+        msg.includes('dismiss') ||
+        msg.includes('state') ||
+        msg.includes('expired')
+      ) {
+        console.warn('[Login Google] Sesión previa expirada o cancelada por el usuario:', msg);
+        return;
+      }
       mostrarErrorOperacion(
         'Error con Google',
-        err.message || 'No se pudo iniciar sesión con tu cuenta de Google.'
+        msg || 'No se pudo iniciar sesión con tu cuenta de Google.'
       );
     } finally {
       setBloqueadoGoogle(false);

@@ -16,14 +16,12 @@ import { Separator } from '../../components/ui/Separator';
 import { theme } from '../../theme/shadcn';
 import { useAuth } from '../../context/AuthContext';
 import { useAlerta } from '../../context/AlertContext';
-import TermsAndPrivacyModal from '../../components/TermsAndPrivacyModal';
 import { exportarDatosUsuario, eliminarCuentaUsuario } from '../../api/support.api';
 
 export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarAAdmin }) {
   const { usuario, perfil, cerrarSesion } = useAuth();
   const { mostrarExito, mostrarErrorOperacion } = useAlerta();
 
-  const [modalTerminosVisible, setModalTerminosVisible] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -165,24 +163,7 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
           </CardContent>
         </Card>
 
-        {/* 3. LEGAL Y PRIVACIDAD */}
-        <Card style={estilos.tarjeta}>
-          <CardHeader>
-            <CardTitle>Legal y Privacidad</CardTitle>
-            <CardDescription>Consulta las condiciones de servicio y protección de datos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <TouchableOpacity style={estilos.opcionFila} onPress={() => setModalTerminosVisible(true)}>
-              <View style={estilos.opcionTextoContenedor}>
-                <Text style={estilos.opcionTitulo}>Políticas de Privacidad y Términos</Text>
-                <Text style={estilos.opcionSubtitulo}>Revisa el tratamiento efímero de certificados y firma PAdES</Text>
-              </View>
-              <Text style={estilos.flecha}>→</Text>
-            </TouchableOpacity>
-          </CardContent>
-        </Card>
-
-        {/* 4. COPIAS DE SEGURIDAD Y DATOS */}
+        {/* 3. COPIAS DE SEGURIDAD Y DATOS */}
         <Card style={estilos.tarjeta}>
           <CardHeader>
             <CardTitle>Copia de Seguridad y Datos</CardTitle>
@@ -204,7 +185,7 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
           </CardContent>
         </Card>
 
-        {/* 5. ZONA DE PELIGRO: ELIMINACIÓN DE CUENTA */}
+        {/* 4. ZONA DE PELIGRO: ELIMINACIÓN DE CUENTA */}
         <Card style={[estilos.tarjeta, estilos.tarjetaPeligro]}>
           <CardHeader>
             <View style={estilos.filaCabecera}>
@@ -229,13 +210,6 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
           </CardContent>
         </Card>
       </ScrollView>
-
-      {/* Modal de Políticas y Términos en modo lectura */}
-      <TermsAndPrivacyModal
-        visible={modalTerminosVisible}
-        soloLectura={true}
-        onCerrar={() => setModalTerminosVisible(false)}
-      />
     </ScreenContainer>
   );
 }
