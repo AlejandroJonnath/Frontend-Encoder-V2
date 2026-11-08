@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAlerta } from '../context/AlertContext';
 import { AuthNavigator } from './AuthNavigator';
 import { OperationNavigator } from './OperationNavigator';
+import AdminScreen from '../screens/admin/AdminScreen';
 import TermsAndPrivacyModal from '../components/TermsAndPrivacyModal';
 import { supabase } from '../config/supabase';
 import { CONFIGURACION } from '../config/constantes';
@@ -16,12 +17,20 @@ import { theme } from '../theme/shadcn';
  * y exige la aceptación obligatoria de Términos y Políticas en el primer inicio (Google o Registro).
  */
 export function AppNavigator() {
-  const { usuario, cargando, cerrarSesion } = useAuth();
+  const { usuario, perfil, cargando, cerrarSesion } = useAuth();
   const { mostrarExito, mostrarErrorOperacion } = useAlerta();
 
   const [verificandoConsentimiento, setVerificandoConsentimiento] = useState(true);
   const [tieneConsentimiento, setTieneConsentimiento] = useState(true);
   const [procesandoTerminos, setProcesandoTerminos] = useState(false);
+
+  const esAdmin =
+    perfil?.role === 'admin' ||
+    perfil?.is_admin === true ||
+    usuario?.app_metadata?.role === 'admin' ||
+    usuario?.user_metadata?.role === 'admin' ||
+    usuario?.email?.toLowerCase() === 'alejo.admin@hotmail.com' ||
+    usuario?.email?.toLowerCase() === 'adriel.admin@hotmail.com';
 
   useEffect(() => {
     if (!usuario?.id) {
@@ -147,7 +156,12 @@ export function AppNavigator() {
     );
   }
 
-  // Si el usuario está autenticado y tiene consentimiento, renderizar el flujo de operaciones
+  // Si el usuario es administrador, renderizar exclusivamente su módulo de administración
+  if (esAdmin) {
+    return <AdminScreen />;
+  }
+
+  // Si el usuario es regular y tiene consentimiento, renderizar la suite de operaciones
   return <OperationNavigator />;
 }
 

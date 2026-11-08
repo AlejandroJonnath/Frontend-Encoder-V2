@@ -5,7 +5,7 @@ import { theme } from '../../theme/shadcn';
 /**
  * Variantes: 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'accent'
  */
-export function Badge({ children, variant = 'default', style, textStyle, ...props }) {
+export function Badge({ children, label, variant = 'default', style, textStyle, ...props }) {
   const getVarianteEstilo = () => {
     switch (variant) {
       case 'secondary':
@@ -43,11 +43,16 @@ export function Badge({ children, variant = 'default', style, textStyle, ...prop
   };
 
   const { caja, texto } = getVarianteEstilo();
+  const contenidoTexto = children !== undefined && children !== null ? children : label;
+
+  if (!contenidoTexto && contenidoTexto !== 0) {
+    return null;
+  }
 
   return (
     <View style={[estilos.base, caja, style]} {...props}>
       <Text style={[estilos.textoBase, texto, textStyle]}>
-        {children}
+        {contenidoTexto}
       </Text>
     </View>
   );

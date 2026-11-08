@@ -87,3 +87,31 @@ export async function obtenerMonitoreoAdmin() {
   return respuesta.data;
 }
 
+/**
+ * Consulta todos los reportes de incidencias para el panel del administrador.
+ */
+export async function obtenerReportesAdmin(filtros = {}) {
+  const cabeceras = await obtenerCabecerasAuth();
+  const respuesta = await axios.get(
+    `${CONFIGURACION.API_BASE_URL}/admin/reportes`,
+    {
+      headers: cabeceras,
+      params: filtros
+    }
+  );
+  return respuesta.data;
+}
+
+/**
+ * Actualiza la clasificación de un reporte (Pendiente, En proceso, Solucionado).
+ */
+export async function actualizarClasificacionReporteAdmin(id, estado, adminResponse = '') {
+  const cabeceras = await obtenerCabecerasAuth();
+  const respuesta = await axios.patch(
+    `${CONFIGURACION.API_BASE_URL}/admin/reportes/${id}`,
+    { estado, adminResponse },
+    { headers: cabeceras }
+  );
+  return respuesta.data;
+}
+
