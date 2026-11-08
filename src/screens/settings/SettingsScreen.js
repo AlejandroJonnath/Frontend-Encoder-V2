@@ -27,6 +27,15 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
   const [exportando, setExportando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
+  // Verificar si el usuario cuenta con permisos de administrador
+  const esAdmin =
+    perfil?.role === 'admin' ||
+    perfil?.is_admin === true ||
+    usuario?.app_metadata?.role === 'admin' ||
+    usuario?.user_metadata?.role === 'admin' ||
+    usuario?.email?.toLowerCase() === 'alejo.admin@hotmail.com' ||
+    usuario?.email?.toLowerCase() === 'adriel.admin@hotmail.com';
+
   // Manejar exportación de copia de seguridad
   const manejarExportarBackup = async () => {
     try {
@@ -115,10 +124,11 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
 
             <Button
               variant="outline"
-              label="Cerrar Sesión"
               onPress={cerrarSesion}
               style={{ marginTop: 12 }}
-            />
+            >
+              Cerrar Sesión
+            </Button>
           </CardContent>
         </Card>
 
@@ -137,15 +147,21 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
               <Text style={estilos.flecha}>→</Text>
             </TouchableOpacity>
 
-            <Separator style={{ marginVertical: 8 }} />
-
-            <TouchableOpacity style={estilos.opcionFila} onPress={onNavegarAAdmin}>
-              <View style={estilos.opcionTextoContenedor}>
-                <Text style={estilos.opcionTitulo}>Panel de Administrador & Métricas</Text>
-                <Text style={estilos.opcionSubtitulo}>Ver estadísticas de uso de apps, salud y monitoreo</Text>
-              </View>
-              <Text style={estilos.flecha}>→</Text>
-            </TouchableOpacity>
+            {esAdmin && (
+              <>
+                <Separator style={{ marginVertical: 8 }} />
+                <TouchableOpacity style={estilos.opcionFila} onPress={onNavegarAAdmin}>
+                  <View style={estilos.opcionTextoContenedor}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <Text style={estilos.opcionTitulo}>Panel de Administrador & Métricas</Text>
+                      <Badge variant="default" label="Admin" />
+                    </View>
+                    <Text style={estilos.opcionSubtitulo}>Ver estadísticas de uso de apps, salud y monitoreo</Text>
+                  </View>
+                  <Text style={estilos.flecha}>→</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -178,12 +194,13 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
             </Text>
             <Button
               variant="default"
-              label="Exportar Copia de Seguridad (JSON)"
               onPress={manejarExportarBackup}
               cargando={exportando}
               disabled={exportando || eliminando}
               style={{ marginTop: 8 }}
-            />
+            >
+              Exportar Copia de Seguridad (JSON)
+            </Button>
           </CardContent>
         </Card>
 
@@ -201,13 +218,14 @@ export default function SettingsScreen({ onVolver, onNavegarASoporte, onNavegarA
               Si decides eliminar tu cuenta, todos tus archivos en la nube, registros de firma, tickets de soporte y credenciales serán borrados para siempre sin posibilidad de recuperación.
             </Text>
             <Button
-              variant="outline"
-              label="Eliminar mi cuenta y mis datos"
+              variant="destructive"
               onPress={manejarEliminarCuenta}
               cargando={eliminando}
               disabled={eliminando || exportando}
               style={estilos.botonEliminar}
-            />
+            >
+              Eliminar mi cuenta y mis datos
+            </Button>
           </CardContent>
         </Card>
       </ScrollView>
@@ -244,7 +262,7 @@ const estilos = StyleSheet.create({
   perfilInfo: {
     backgroundColor: theme.colors.cardHover,
     padding: 12,
-    borderRadius: theme.radii.md,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

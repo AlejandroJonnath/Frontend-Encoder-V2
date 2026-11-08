@@ -8,6 +8,7 @@ import { theme } from '../../theme/shadcn';
  */
 export function Button({
   children,
+  label,
   variant = 'default',
   size = 'default',
   cargando = false,
@@ -92,7 +93,7 @@ export function Button({
             children
           ) : (
             <Text style={[estilos.textoBase, texto, icon && { marginLeft: 8 }, textStyle]}>
-              {children}
+              {children !== undefined && children !== null ? children : label}
             </Text>
           )}
         </>

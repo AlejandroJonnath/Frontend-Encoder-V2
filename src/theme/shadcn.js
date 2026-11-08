@@ -68,6 +68,15 @@ export const theme = {
     xl: 18,
     full: 9999,
   },
+  radii: {
+    none: 0,
+    xs: 4,
+    sm: 6,
+    md: 10,
+    lg: 14,
+    xl: 18,
+    full: 9999,
+  },
 
   // Jerarquía Tipográfica con espaciado y alturas de línea seguras para Android / iOS
   typography: {
@@ -121,6 +130,37 @@ export const theme = {
       fontSize: 12,
       color: '#38BDF8',
       fontFamily: 'monospace',
+    },
+    // Compatibilidad adicional
+    titleMedium: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#FAFAFA',
+    },
+    labelLarge: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#FAFAFA',
+    },
+    labelMedium: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: '#A1A1AA',
+    },
+    labelSmall: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: '#71717A',
+    },
+    bodyMedium: {
+      fontSize: 14,
+      fontWeight: '400',
+      color: '#A1A1AA',
+    },
+    bodySmall: {
+      fontSize: 12,
+      fontWeight: '400',
+      color: '#A1A1AA',
     },
   },
 };

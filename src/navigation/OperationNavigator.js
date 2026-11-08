@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import HomeScreen from '../features/dashboard/screens/HomeScreen';
 import SignPdfScreen from '../features/firma/screens/SignPdfScreen';
 import CompressPdfScreen from '../features/pdf/screens/CompressPdfScreen';
@@ -18,6 +20,15 @@ import AdminScreen from '../screens/admin/AdminScreen';
 // Importa directamente desde la ubicación canónica en features/*/screens 
 export function OperationNavigator() {
   const [ruta, setRuta] = useState('home');
+  const { usuario, perfil } = useAuth();
+
+  const esAdmin =
+    perfil?.role === 'admin' ||
+    perfil?.is_admin === true ||
+    usuario?.app_metadata?.role === 'admin' ||
+    usuario?.user_metadata?.role === 'admin' ||
+    usuario?.email?.toLowerCase() === 'alejo.admin@hotmail.com' ||
+    usuario?.email?.toLowerCase() === 'adriel.admin@hotmail.com';
 
   const volverAHome = () => setRuta('home');
 
@@ -27,12 +38,27 @@ export function OperationNavigator() {
         <SettingsScreen
           onVolver={volverAHome}
           onNavegarASoporte={() => setRuta('soporte')}
-          onNavegarAAdmin={() => setRuta('admin')}
+          onNavegarAAdmin={() => {
+            if (!esAdmin) {
+              Alert.alert('Acceso Denegado', 'No cuentas con privilegios de administrador.');
+              return;
+            }
+            setRuta('admin');
+          }}
         />
       );
     case 'soporte':
       return <SupportScreen onVolver={() => setRuta('configuracion')} />;
     case 'admin':
+      if (!esAdmin) {
+        return (
+          <SettingsScreen
+            onVolver={volverAHome}
+            onNavegarASoporte={() => setRuta('soporte')}
+            onNavegarAAdmin={() => {}}
+          />
+        );
+      }
       return <AdminScreen onVolver={() => setRuta('configuracion')} />;
 
     case 'firmar':

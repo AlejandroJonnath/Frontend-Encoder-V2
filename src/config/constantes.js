@@ -11,7 +11,8 @@ export const CONFIGURACION = {
   // URL del Backend en Express.
   // - En producción: URL pública de Render terminada en /api
   // - En desarrollo local: http://192.168.1.2:3000/api
-  URL_API_BACKEND: process.env.EXPO_PUBLIC_API_URL,
+  URL_API_BACKEND: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
 
   // Lista estricta de idiomas permitidos para traducción con IA
   IDIOMAS_TRADUCCION: [

@@ -140,26 +140,29 @@ export default function TermsAndPrivacyModal({
             {soloLectura ? (
               <Button
                 variant="default"
-                label="Entendido, Volver"
                 onPress={onCerrar}
                 style={estilos.botonAncho}
-              />
+              >
+                Entendido, Volver
+              </Button>
             ) : (
               <View style={estilos.filaBotones}>
                 <Button
                   variant="outline"
-                  label={procesandoRechazo ? 'Cancelando...' : 'Rechazar'}
                   onPress={manejarRechazo}
                   disabled={cargando || procesandoRechazo}
                   style={estilos.botonSecundario}
-                />
+                >
+                  {procesandoRechazo ? 'Cancelando...' : 'Rechazar'}
+                </Button>
                 <Button
                   variant="default"
-                  label={cargando ? 'Aceptando...' : 'Acepto Políticas y Términos'}
                   onPress={onAceptar}
                   disabled={cargando || procesandoRechazo}
                   style={estilos.botonPrincipal}
-                />
+                >
+                  {cargando ? 'Aceptando...' : 'Acepto Políticas y Términos'}
+                </Button>
               </View>
             )}
           </CardFooter>
@@ -183,7 +186,7 @@ const estilos = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderColor: theme.colors.borderStrong,
     borderWidth: 1,
-    borderRadius: theme.radii.lg,
+    borderRadius: theme.radius.lg,
   },
   cabeceraFila: {
     flexDirection: 'row',
@@ -191,7 +194,8 @@ const estilos = StyleSheet.create({
     marginBottom: theme.spacing.xs,
   },
   tituloModal: {
-    fontSize: theme.typography.titleMedium.fontSize,
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.colors.foreground,
   },
   contenidoScroll: {
@@ -202,22 +206,22 @@ const estilos = StyleSheet.create({
     paddingHorizontal: theme.spacing.xs,
   },
   seccionTitulo: {
-    fontSize: theme.typography.labelLarge.fontSize,
-    fontFamily: theme.typography.labelLarge.fontFamily,
+    fontSize: 14,
+    fontWeight: '700',
     color: theme.colors.ring,
     marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.xs,
     letterSpacing: 0.5,
   },
   subtitulo: {
-    fontSize: theme.typography.bodyMedium.fontSize,
-    fontFamily: theme.typography.labelLarge.fontFamily,
+    fontSize: 13,
+    fontWeight: '600',
     color: theme.colors.foreground,
     marginTop: theme.spacing.sm,
     marginBottom: 2,
   },
   parrafo: {
-    fontSize: theme.typography.bodySmall.fontSize,
+    fontSize: 12,
     color: theme.colors.mutedForeground,
     lineHeight: 18,
     marginBottom: theme.spacing.xs,

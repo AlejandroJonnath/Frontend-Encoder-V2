@@ -159,7 +159,6 @@ export default function RegisterScreen({ onIrALogin }) {
       setCargandoTerminos(false);
     }
   };
-  };
 
   return (
     <ScreenContainer

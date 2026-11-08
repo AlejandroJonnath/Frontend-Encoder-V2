@@ -244,7 +244,7 @@ const estilos = StyleSheet.create({
   pestañasContenedor: {
     flexDirection: 'row',
     backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.md,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 4,
@@ -253,13 +253,13 @@ const estilos = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: theme.radii.sm,
+    borderRadius: theme.radius.sm,
   },
   tabActivo: {
     backgroundColor: theme.colors.muted,
   },
   tabTexto: {
-    fontSize: theme.typography.labelSmall.fontSize,
+    fontSize: 12,
     color: theme.colors.mutedForeground,
     fontWeight: '600',
   },
@@ -337,7 +337,7 @@ const estilos = StyleSheet.create({
     minWidth: '45%',
     backgroundColor: theme.colors.cardHover,
     padding: 12,
-    borderRadius: theme.radii.md,
+    borderRadius: theme.radius.md,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
