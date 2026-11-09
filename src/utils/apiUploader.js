@@ -299,9 +299,20 @@ function subirConXHRMultipart({
 
     // Construcción de FormData nativo de React Native (soporta file:// y content:// sin Base64)
     const formData = new FormData();
-    const ext = nombreArchivo.toLowerCase().endsWith('.p12') || nombreArchivo.toLowerCase().endsWith('.pfx')
-      ? 'application/x-pkcs12'
-      : (nombreArchivo.toLowerCase().endsWith('.png') ? 'image/png' : (nombreArchivo.toLowerCase().endsWith('.jpg') ? 'image/jpeg' : 'application/pdf'));
+    const ext = (() => {
+      const n = nombreArchivo.toLowerCase();
+      if (n.endsWith('.p12') || n.endsWith('.pfx')) return 'application/x-pkcs12';
+      if (n.endsWith('.png')) return 'image/png';
+      if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
+      if (n.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      if (n.endsWith('.doc')) return 'application/msword';
+      if (n.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      if (n.endsWith('.ppt')) return 'application/vnd.ms-powerpoint';
+      if (n.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      if (n.endsWith('.xls')) return 'application/vnd.ms-excel';
+      if (n.endsWith('.txt')) return 'text/plain';
+      return 'application/octet-stream';
+    })();
 
     formData.append(campoNombre, {
       uri: archivoUri,
