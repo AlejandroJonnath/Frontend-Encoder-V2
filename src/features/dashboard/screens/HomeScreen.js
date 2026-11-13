@@ -37,7 +37,6 @@ const SECCIONES = [
     items: [
       { id: 'convert_word',  titulo: 'Word a PDF',        icono: 'microsoft-word',            familiaIcono: 'mci', colorIcono: '#60A5FA', fondoIcono: 'rgba(37, 99, 235, 0.14)',   bordeIcono: 'rgba(37, 99, 235, 0.3)',   etiqueta: 'Word',      varianteBadge: 'secondary' },
       { id: 'convert_excel', titulo: 'Excel a PDF',       icono: 'microsoft-excel',           familiaIcono: 'mci', colorIcono: '#34D399', fondoIcono: 'rgba(16, 185, 129, 0.14)', bordeIcono: 'rgba(16, 185, 129, 0.3)', etiqueta: 'Excel',     varianteBadge: 'secondary' },
-      { id: 'convert_ppt',   titulo: 'PowerPoint a PDF',  icono: 'microsoft-powerpoint',      familiaIcono: 'mci', colorIcono: '#FB923C', fondoIcono: 'rgba(234, 88, 12, 0.14)',  bordeIcono: 'rgba(234, 88, 12, 0.3)',  etiqueta: 'PowerPoint',varianteBadge: 'secondary' },
       { id: 'convert_txt',   titulo: 'Bloc de notas a PDF',icono: 'file-document-outline',    familiaIcono: 'mci', colorIcono: '#CBD5E1', fondoIcono: 'rgba(148, 163, 184, 0.14)',bordeIcono: 'rgba(148, 163, 184, 0.3)',etiqueta: 'TXT',       varianteBadge: 'secondary' },
       { id: 'convert_image', titulo: 'Imágenes a PDF',    icono: 'image-multiple-outline',    familiaIcono: 'mci', colorIcono: '#F472B6', fondoIcono: 'rgba(236, 72, 153, 0.14)', bordeIcono: 'rgba(236, 72, 153, 0.3)', etiqueta: 'JPG / PNG', varianteBadge: 'secondary' },
     ],

@@ -32,7 +32,7 @@ export async function procesarExcelAPdfApi({ archivoTemporalId, hojasSeleccionad
  * Servicio para convertir documentos (Word, PPT, TXT, Imágenes) a PDF
  */
 export async function convertirDocumentoAPdfApi({
-  tipo, // 'word' | 'powerpoint' | 'txt' | 'imagen'
+  tipo, // 'word' | 'txt' | 'imagen'
   archivoUri,
   nombreArchivoSalida,
   signal = null,

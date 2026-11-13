@@ -9,7 +9,6 @@ import AddNoteScreen from '../features/pdf/screens/AddNoteScreen';
 import GroqAiScreen from '../features/ia/screens/GroqAiScreen';
 import ConvertWordScreen from '../features/conversion/screens/ConvertWordScreen';
 import ConvertExcelScreen from '../features/conversion/screens/ConvertExcelScreen';
-import ConvertPptScreen from '../features/conversion/screens/ConvertPptScreen';
 import ConvertTxtScreen from '../features/conversion/screens/ConvertTxtScreen';
 import ConvertImageScreen from '../features/conversion/screens/ConvertImageScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
@@ -77,8 +76,6 @@ export function OperationNavigator() {
       return <ConvertWordScreen onVolver={volverAHome} />;
     case 'convert_excel':
       return <ConvertExcelScreen onVolver={volverAHome} />;
-    case 'convert_ppt':
-      return <ConvertPptScreen onVolver={volverAHome} />;
     case 'convert_txt':
       return <ConvertTxtScreen onVolver={volverAHome} />;
     case 'convert_image':

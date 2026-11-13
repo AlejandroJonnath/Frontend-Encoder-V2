@@ -116,7 +116,7 @@ export default function TermsAndPrivacyModal({
                 Puedes utilizar la aplicación en cualquier momento para:
                 {'\n'}• Firmar digitalmente documentos PDF mediante el estándar PAdES con código QR de verificación oficial (compatible con FirmaEC).
                 {'\n'}• Comprimir archivos PDF pesados optimizando flujos de imágenes y tipografías.
-                {'\n'}• Convertir documentos de Word, Excel, PowerPoint, imágenes y archivos de texto plano a formato PDF.
+                {'\n'}• Convertir documentos de Word, Excel, imágenes y archivos de texto plano a formato PDF.
                 {'\n'}• Generar resúmenes ejecutivos y traducciones técnicas mediante Inteligencia Artificial.
               </Text>
 
