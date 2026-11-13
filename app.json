@@ -6,13 +6,21 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#09090B"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.encodergoti.app"
+      "bundleIdentifier": "com.encodergoti.app",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "package": "com.encodergoti.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#09090B"
       }
     },
